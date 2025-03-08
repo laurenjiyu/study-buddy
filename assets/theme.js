@@ -1,0 +1,28 @@
+export default {
+  // Feel free to customize these colors!
+  colors: {
+    backgroundPrimary: "#F5F4F1",
+    backgroundSecondary: "white",
+
+    lightGray: "#DFE5E4",
+    darkGray: "#A0ABAA",
+
+    textPrimary: "black",
+    textSecondary: "#B4B4B4",
+    textTertiary: "#6C6C6C",
+    textHighlighted: "#FF5C00",
+
+    iconPrimary: "#FFFFFF",
+    iconSecondary: "#B4B4B4",
+    iconHighlighted: "#FF5C00",
+
+    tabBarActive: "#FFFFFF",
+    tabBarBorder: "#747474",
+  },
+  sizes: {
+    iconSmall: 16,
+
+    textMedium: 16,
+    textLarge: 20,
+  },
+};
