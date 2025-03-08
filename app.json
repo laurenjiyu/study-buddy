@@ -29,6 +29,7 @@
     "plugins": [
       "expo-router"
     ],
-    "scheme": "expo-router-test"
+    "scheme": "expo-router-test",
+    "newArchEnabled": "true"
   }
 }

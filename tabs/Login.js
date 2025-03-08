@@ -18,6 +18,11 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedAvatar, setAvatar] = useState("");
+
+  const updateAvatar = (chosen) => {
+    setAvatar(chosen);
+  }
 
   const signInWithEmail = async () => {
     setLoading(true);
@@ -49,24 +54,12 @@ export default function Login() {
         <FontAwesome6 name="book-open-reader" size={40} color="black" />
           <Text style={styles.splashText}>Welcome! Choose your productivity friend.</Text>
       </View>
-      <AvatarChoice avatar="Positive Percy" alignment="left"></AvatarChoice>
-      <TextInput
-        onChangeText={(text) => setEmail(text)}
-        value={email}
-        placeholder="email@address.com"
-        placeholderTextColor={Theme.colors.textSecondary}
-        autoCapitalize={"none"}
-        style={styles.input}
-      />
-      <TextInput
-        onChangeText={(text) => setPassword(text)}
-        value={password}
-        placeholder="Password"
-        placeholderTextColor={Theme.colors.textSecondary}
-        secureTextEntry={true}
-        autoCapitalize={"none"}
-        style={styles.input}
-      />
+      <View style={styles.choices}>
+        <AvatarChoice avatar="Positive Percy" alignment="left" chooseAvatar={updateAvatar} chosen={selectedAvatar === "Positive Percy"}></AvatarChoice>
+        <AvatarChoice avatar="Sassy Mary" alignment="right" chooseAvatar={updateAvatar} chosen={selectedAvatar === "Sassy Mary"}></AvatarChoice>
+        <AvatarChoice avatar="Gentle Joey" alignment="left" chooseAvatar={updateAvatar} chosen={selectedAvatar === "Gentle Joey"}></AvatarChoice>
+      </View>
+
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           onPress={() => signInWithEmail()}
@@ -92,6 +85,10 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: Theme.colors.backgroundPrimary,
     flex: 1,
+  },
+  choices: {
+    justifyContent: "space-between",
+    gap:-10,
   },
   splash: {
     alignItems: "center",

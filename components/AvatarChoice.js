@@ -18,12 +18,18 @@ const avatarDict = {"Positive Percy": "Stays positive even in the hardest times"
   "Gentle Joey": "Understanding and very forgiving at all times",
   };
 
-export default function AvatarChoice({avatar, alignment}) {
-  const [selected, selectAvatar] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+const avatarImages = {
+  "Positive Percy": require("@/assets/avatar/positive-percy.png"),
+  "Sassy Mary": require("@/assets/avatar/sassy-mary.png"),
+  "Gentle Joey": require("@/assets/avatar/gentle-joey.png"),
+};
 
+export default function AvatarChoice({avatar, alignment, chooseAvatar, chosen}) {
+
+  const selectAvatar = () => {
+    chooseAvatar(avatar);
+    console.log(avatar)
+  }
 
   const signInWithEmail = async () => {
     setLoading(true);
@@ -44,21 +50,34 @@ export default function AvatarChoice({avatar, alignment}) {
       console.error(err);
     }
   };
-
-  const isSignInDisabled =
-    loading || email.length === 0 || password.length === 0;
-
+  
   return (
-    <View style = {styles.biggerContainer}>
-      <Image source={require('@/assets/avatar/gentle-joey.png')} style={styles.img} />
-      <View style={styles.grayRectangle}>
-        <View style={styles.textSection}>
-          <Text style = {styles.name}>{avatar}</Text>
-          <Text>{avatarDict[avatar]}</Text>
-        </View>
-      </View>
+    <View style={styles.biggerContainer}>
+      {alignment === "left" ? (
+        <>
+          <TouchableOpacity style={[styles.grayRectangle, chosen && styles.selected]} onPress={selectAvatar}>
+            <View style={styles.textSectionLeft}>
+              <Text style={styles.name}>{avatar}</Text>
+              <Text>{avatarDict[avatar]}</Text>
+            </View>
+          </TouchableOpacity>
+          <Image source={avatarImages[avatar]} style={styles.imgLeft} />
+        </>
+      ) : (
+        <>
+          <TouchableOpacity style={[styles.grayRectangle, chosen && styles.selected]} onPress={selectAvatar}>
+            <View style={styles.textSectionRight}>
+              <Text style={styles.name}>{avatar}</Text>
+              <Text>{avatarDict[avatar]}</Text>
+            </View>
+          </TouchableOpacity>
+          <Image source={avatarImages[avatar]} style={styles.imgRight} />
+        </>
+      )}
     </View>
   );
+
+
 }
 
 const styles = StyleSheet.create({
@@ -68,11 +87,16 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   biggerContainer: {
-    height: 200,
+    height: 180,
     justifyContent: "center",
   },
-  textSection: {
+  textSectionLeft: {
     marginLeft: 80,
+    justifyContent: "center",
+  },
+  textSectionRight: {
+    marginRight: 80,
+    textAlign: "right",
     justifyContent: "center",
   },
   grayRectangle: {
@@ -82,7 +106,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: Theme.colors.lightGray,
   },
-  img: {
+  selected: {
+    backgroundColor: Theme.colors.darkGray,
+  },
+  imgLeft: {
     position: "absolute",
     maxHeight: 200,
     resizeMode: "contain",
@@ -90,42 +117,12 @@ const styles = StyleSheet.create({
     left: -20,
     zIndex: 1,
   },
-  splash: {
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  splashText: {
-    marginTop: 15,
-    fontWeight: "bold",
-    color: Theme.colors.textPrimary,
-    textAlign: "center",
-    fontSize: 30,
-  },
-  buttonContainer: {
-    marginTop: 12,
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  verticallySpaced: {
-    marginVertical: 4,
-    alignSelf: "stretch",
-  },
-  mt20: {
-    marginTop: 20,
-  },
-  input: {
-    color: Theme.colors.textPrimary,
-    backgroundColor: Theme.colors.backgroundSecondary,
-    width: "100%",
-    padding: 16,
-  },
-  button: {
-    color: Theme.colors.textHighlighted,
-    fontSize: 18,
-    fontWeight: 18,
-    padding: 8,
-  },
-  buttonDisabled: {
-    color: Theme.colors.textSecondary,
+  imgRight: {
+    position: "absolute",
+    maxHeight: 200,
+    resizeMode: "contain",
+    top: -20,
+    right: -20,
+    zIndex: 1,
   },
 });
