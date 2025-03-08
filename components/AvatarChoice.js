@@ -8,8 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import db from "@/database/db";
+
 
 import Theme from "@/assets/theme";
 
@@ -31,26 +30,6 @@ export default function AvatarChoice({avatar, alignment, chooseAvatar, chosen}) 
     console.log(avatar)
   }
 
-  const signInWithEmail = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await db.auth.signInWithPassword({
-        email: email,
-        password: password,
-        options: {
-          shouldCreateUser: false,
-        },
-      });
-
-      if (error) {
-        Alert.alert(error.message);
-      }
-      setLoading(false);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  
   return (
     <View style={styles.biggerContainer}>
       {alignment === "left" ? (
@@ -83,11 +62,11 @@ export default function AvatarChoice({avatar, alignment, chooseAvatar, chosen}) 
 const styles = StyleSheet.create({
   name: {
     fontWeight: "bold",
-    fontSize: 25,
-    paddingBottom: 10,
+    fontSize: 22,
+    paddingBottom: 1,
   },
   biggerContainer: {
-    height: 180,
+    height: 150,
     justifyContent: "center",
   },
   textSectionLeft: {
@@ -103,7 +82,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
     margin: 30,
-    borderRadius: 20,
+    borderRadius: 15,
     backgroundColor: Theme.colors.lightGray,
   },
   selected: {
@@ -111,7 +90,7 @@ const styles = StyleSheet.create({
   },
   imgLeft: {
     position: "absolute",
-    maxHeight: 200,
+    maxHeight: 180,
     resizeMode: "contain",
     top: -20,
     left: -20,
@@ -119,7 +98,7 @@ const styles = StyleSheet.create({
   },
   imgRight: {
     position: "absolute",
-    maxHeight: 200,
+    maxHeight: 180,
     resizeMode: "contain",
     top: -20,
     right: -20,

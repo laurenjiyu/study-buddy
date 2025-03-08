@@ -2,6 +2,7 @@
   "name": "cs147l-24au-a4",
   "version": "1.0.0",
   "main": "expo-router/entry",
+  "newArchEnabled": true,
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -14,6 +15,7 @@
     "create-expo-app": "^3.2.0",
     "expo": "^52.0.37",
     "expo-constants": "~16.0.2",
+    "expo-font": "~13.0.4",
     "expo-linking": "~6.3.1",
     "expo-router": "~3.5.23",
     "expo-status-bar": "~1.12.1",

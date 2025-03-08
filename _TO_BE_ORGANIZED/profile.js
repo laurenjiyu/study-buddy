@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 
 import Theme from "@/assets/theme";
 import Feed from "@/tabs/Feed";
-import Loading from "@/tabs/Loading";
+import Loading from "@/app/Loading";
 
 import db from "@/database/db";
 import useSession from "@/utils/useSession";

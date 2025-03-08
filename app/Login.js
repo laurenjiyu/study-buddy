@@ -11,6 +11,9 @@ import { StatusBar } from "expo-status-bar";
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import db from "@/database/db";
 import AvatarChoice from "@/components/AvatarChoice";
+import Button from "@/components/Button";
+import { useNavigation } from '@react-navigation/native';
+
 
 import Theme from "@/assets/theme";
 
@@ -19,39 +22,59 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedAvatar, setAvatar] = useState("");
-
+  const navigation = useNavigation();
+  
   const updateAvatar = (chosen) => {
     setAvatar(chosen);
   }
 
-  const signInWithEmail = async () => {
-    setLoading(true);
+  const confirmAvatar = async () => {
     try {
-      const { data, error } = await db.auth.signInWithPassword({
-        email: email,
-        password: password,
-        options: {
-          shouldCreateUser: false,
-        },
-      });
-
-      if (error) {
-        Alert.alert(error.message);
+      console.log("Selected Avatar:", selectedAvatar);
+  
+      // Step 1: Fetch the avatar ID using the selected avatar name
+      const { data: avatarData, error: avatarError } = await db
+        .from("avatar-options")
+        .select("id")
+        .eq("name", selectedAvatar)
+        .maybeSingle(); 
+  
+      if (avatarError || !avatarData) {
+        Alert.alert("Error", "Invalid avatar selection. Please try again.");
+        return;
       }
-      setLoading(false);
+  
+      const avatarId = avatarData.id; // Get the correct avatar ID
+      console.log("Selected Avatar ID:", avatarId);
+  
+      // Update the row where id=1
+      const { error: updateError } = await db
+        .from("user-info")
+        .update({ chosen_avatar: avatarId, time_worked: 0 })  // No array here, use an object
+        .eq("id", 1);  // Only update row where id=1
+  
+      if (updateError) {
+        console.error("Error choosing avatar:", updateError.message);
+        Alert.alert("Error", updateError.message);
+        return;
+      }
+  
+      console.log("Success", `You have chosen ${selectedAvatar}!`);
+      navigation.navigate("AboutAvatar");
     } catch (err) {
-      console.error(err);
+      console.error("Unexpected error updating avatar:", err.message);
     }
   };
-
-  const isSignInDisabled =
-    loading || email.length === 0 || password.length === 0;
+  
+  
+  
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
+      <View style={styles.circle}/>
+
       <View style={styles.splash}>
-        <FontAwesome6 name="book-open-reader" size={40} color="black" />
           <Text style={styles.splashText}>Welcome! Choose your productivity friend.</Text>
       </View>
       <View style={styles.choices}>
@@ -59,22 +82,7 @@ export default function Login() {
         <AvatarChoice avatar="Sassy Mary" alignment="right" chooseAvatar={updateAvatar} chosen={selectedAvatar === "Sassy Mary"}></AvatarChoice>
         <AvatarChoice avatar="Gentle Joey" alignment="left" chooseAvatar={updateAvatar} chosen={selectedAvatar === "Gentle Joey"}></AvatarChoice>
       </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          onPress={() => signInWithEmail()}
-          disabled={isSignInDisabled}
-        >
-          <Text
-            style={[
-              styles.button,
-              isSignInDisabled ? styles.buttonDisabled : undefined,
-            ]}
-          >
-            Sign in
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <Button text="Next" onPress={confirmAvatar} clickable={selectedAvatar != ""}/>
     </View>
   );
 }
@@ -82,17 +90,28 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     paddingTop: 60,
-    padding: 12,
+    padding: 30,
     backgroundColor: Theme.colors.backgroundPrimary,
     flex: 1,
+  },
+  circle: {
+    position: "absolute",
+    bottom: -50, // Move it slightly down so it looks embedded
+    alignSelf: "center",
+    width: 450, // Circle size
+    height: 500, // Circle size
+    borderRadius: 150, // Makes it a perfect circle
+    backgroundColor: "white", // White background
   },
   choices: {
     justifyContent: "space-between",
     gap:-10,
+    marginBottom: 30,
   },
   splash: {
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 30,
+    marginTop: 40,
   },
   splashText: {
     marginTop: 15,

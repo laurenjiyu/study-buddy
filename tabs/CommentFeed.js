@@ -3,7 +3,7 @@ import { StyleSheet, FlatList, RefreshControl } from "react-native";
 
 import Theme from "@/assets/theme";
 import Comment from "./Comment";
-import Loading from "./Loading";
+import Loading from "../app/Loading";
 
 import timeAgo from "@/utils/timeAgo";
 
