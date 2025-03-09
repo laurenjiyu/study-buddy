@@ -10,6 +10,9 @@ export default {
     buttonBlue: "#C6D8D6",
     inactiveGray: "#EAF0F0",
 
+    // Text bubble colors
+    myBubbleBlue: "#CFFFF7",
+
     textPrimary: "black",
     textInactive: "#A6A6A6",
     textSecondary: "#B4B4B4",

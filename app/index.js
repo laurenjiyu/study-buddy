@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, LogBox } from 'react-native';
 import { useFonts } from 'expo-font'; // Ensure this import is here
 
 import { Redirect } from "expo-router";
 
 import ChooseAvatar from "@/app/ChooseAvatar";
 import ChooseLocation from "@/app/ChooseLocation";
+import SetupSession from "@/app/SetupSession";
+
 
 import db from "@/database/db";
 import Loading from "@/app/Loading";
+
+
+// Hides all console warnings
+LogBox.ignoreAllLogs(true);
+
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -58,6 +65,6 @@ export default function App() {
   } else if (isLoading) {
     return <Loading />;
   } else {
-    return <ChooseLocation />;
+    return <ChooseAvatar />;
   }
 }

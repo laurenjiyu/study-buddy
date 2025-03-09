@@ -12,27 +12,43 @@ import { useNavigation } from "@react-navigation/native";
 import db from "@/database/db";
 import Button from "@/components/Button";
 import Theme from "@/assets/theme";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; // Import FontAwesome for back icon
+import  { avatarImages, bgImages } from "@/assets/imgPaths";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; 
 
 export default function AboutAvatar() {
   const [avatarId, setAvatarId] = useState(null);
   const [avatarName, setAvatarName] = useState("Loading...");
   const [avatarDesc, setAvatarDesc] = useState("Loading...");
   const [isLoading, setIsLoading] = useState(true);
-  const [chosenImg, chooseImg] = useState("bedroom");
+  const [chosenBg, chooseBg] = useState("bedroom");
 
   const navigation = useNavigation();
 
-  const avatarImages = {
-    "Positive Percy": require("@/assets/avatar/positive-percy.png"),
-    "Sassy Mary": require("@/assets/avatar/sassy-mary.png"),
-    "Gentle Joey": require("@/assets/avatar/gentle-joey.png"),
-  };
+  const getBgImage = (name) => bgImages[name] || bgImages.bedroom;
 
-  const bgImages = {
-    bedroom: require("@/assets/backgrounds/bedroom.png"),
-    cafe: require("@/assets/backgrounds/cafe.png"),
-    library: require("@/assets/backgrounds/library.png"),
+  const getAvatarImage = (name) => avatarImages[name];
+  
+  const confirmBg = async () => {
+    try {
+      console.log("Selected background:", chosenBg);
+
+      // Update the row where id=1
+      const { error: updateError } = await db
+        .from("user-info")
+        .update({ chosen_background: chosenBg})  // No array here, use an object
+        .eq("id", 1);  // Only update row where id=1
+  
+      if (updateError) {
+        console.error("Error choosing background:", updateError.message);
+        Alert.alert("Error", updateError.message);
+        return;
+      }
+  
+      console.log("Success", `You have chosen ${chosenBg}!`);
+      navigation.navigate("SetupSession");
+    } catch (err) {
+      console.error("Unexpected error updating background:", err.message);
+    }
   };
 
   const fetchAvatar = async () => {
@@ -93,12 +109,12 @@ export default function AboutAvatar() {
   const ImageOption = ({ setting }) => {
     return (
       <TouchableOpacity
-        onPress={() => chooseImg(setting)}
+        onPress={() => chooseBg(setting)}
         style={styles.imageOption}
       >
         <Image
           source={bgImages[setting]}
-          style={[styles.imagePreview, chosenImg != setting && styles.inactive]}
+          style={[styles.imagePreview, chosenBg != setting && styles.inactive]}
         />
       </TouchableOpacity>
     );
@@ -132,22 +148,23 @@ export default function AboutAvatar() {
 
       {/* Render selectable background options */}
       <View style={styles.imageOptionsContainer}>
-        {Object.keys(bgImages).map((key) => (
-          <ImageOption key={key} setting={key} />
-        ))}
+        <ImageOption setting={"bedroom"} />
+        <ImageOption setting={"cafe"} />
+        <ImageOption setting={"library"} />
       </View>
 
       {/* Background Image */}
       <View style={styles.backgroundWrapper}>
-        <Image source={bgImages[chosenImg]} style={styles.backgroundImg} />
-        <Image source={avatarImages[avatarName]} style={styles.avatarImg} />
+        <Image source={getBgImage(chosenBg)} style={styles.backgroundImg} />
+        <Image source={getAvatarImage(avatarName)} style={styles.avatarImg} />
+
       </View>
 
       <Button
         style={styles.button}
         clickable={true}
         text="Next"
-        onPress={() => navigation.navigate("NextScreen")}
+        onPress={confirmBg}
       />
     </View>
   );
@@ -166,7 +183,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 70,
     left: 20,
-    zIndex: 10, // Ensures it's above other UI elements
+    zIndex: 10,
   },
   button: {
     marginTop: 30,

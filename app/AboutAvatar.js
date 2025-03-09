@@ -5,23 +5,17 @@ import { useNavigation } from "@react-navigation/native";
 import db from "@/database/db";
 import Button from "@/components/Button";
 import Theme from "@/assets/theme";
+import  { avatarImages } from "@/assets/imgPaths";
+import { introDesc } from "@/assets/avatarInfo";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; // Import FontAwesome for back icon
 
 export default function AboutAvatar() {
   const [avatarId, setAvatarId] = useState(null);
   const [avatarName, setAvatarName] = useState("Loading...");
-  const [avatarDesc, setAvatarDesc] = useState("Loading...");
   const [isLoading, setIsLoading] = useState(true);
 
   const navigation = useNavigation();
-
-  const avatarImages = {
-    "Positive Percy": require("@/assets/avatar/positive-percy.png"),
-    "Sassy Mary": require("@/assets/avatar/sassy-mary.png"),
-    "Gentle Joey": require("@/assets/avatar/gentle-joey.png"),
-  };
   
-
   const fetchAvatar = async () => {
     try {
       setIsLoading(true);
@@ -36,7 +30,6 @@ export default function AboutAvatar() {
       if (userInfoError || !userInfo?.chosen_avatar) {
         console.error("Error fetching user-info:", userInfoError?.message);
         setAvatarName("Unknown");
-        setAvatarDesc("No description available.");
         setIsLoading(false);
         return;
       }
@@ -48,26 +41,23 @@ export default function AboutAvatar() {
       // Get the avatar name & description from `avatar-options`
       const { data: avatarData, error: avatarError } = await db
         .from("avatar-options")
-        .select("name, intro_desc")
+        .select("name")
         .eq("id", avatarId)
         .maybeSingle();
 
       if (avatarError || !avatarData) {
         console.error("Error fetching avatar details:", avatarError?.message);
         setAvatarName("Unknown");
-        setAvatarDesc("No description available.");
         setIsLoading(false);
         return;
       }
 
       // Update state with fetched data
       setAvatarName(avatarData.name);
-      setAvatarDesc(avatarData.intro_desc);
-      console.log("Fetched Avatar:", avatarData.name, avatarData.intro_desc);
+      console.log("Fetched Avatar:", avatarData.name);
     } catch (err) {
       console.error("Unexpected error fetching avatar:", err.message);
       setAvatarName("Unknown");
-      setAvatarDesc("No description available.");
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +88,7 @@ export default function AboutAvatar() {
         )}
       </View>
       <Image source={avatarImages[avatarName]} style={styles.img} />
-      <Text style={styles.desc}>{isLoading ? "Loading..." : avatarDesc}</Text>
+      <Text style={styles.desc}>{isLoading ? "Loading..." : introDesc[avatarName]}</Text>
       <Button style={styles.button} clickable={true} text="Next" onPress={() => navigation.navigate("ChooseLocation")} />
     </View>
   );

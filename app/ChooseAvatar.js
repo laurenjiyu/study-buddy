@@ -24,9 +24,7 @@ export default function Login() {
   const [selectedAvatar, setAvatar] = useState("");
   const navigation = useNavigation();
   
-  const updateAvatar = (chosen) => {
-    setAvatar(chosen);
-  }
+  const updateAvatar = (chosen) => setAvatar(chosen);
 
   const confirmAvatar = async () => {
     try {
@@ -67,13 +65,11 @@ export default function Login() {
   };
   
   
-  
 
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
       <View style={styles.circle}/>
-
       <View style={styles.splash}>
           <Text style={styles.splashText}>Welcome! Choose your productivity friend.</Text>
       </View>
