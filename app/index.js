@@ -4,7 +4,9 @@ import { useFonts } from 'expo-font'; // Ensure this import is here
 
 import { Redirect } from "expo-router";
 
-import Login from "@/app/Login";
+import ChooseAvatar from "@/app/ChooseAvatar";
+import ChooseLocation from "@/app/ChooseLocation";
+
 import db from "@/database/db";
 import Loading from "@/app/Loading";
 
@@ -56,6 +58,6 @@ export default function App() {
   } else if (isLoading) {
     return <Loading />;
   } else {
-    return <Login />;
+    return <ChooseLocation />;
   }
 }
