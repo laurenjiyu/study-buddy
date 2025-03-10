@@ -5,56 +5,80 @@ import {
   TextInput,
   StyleSheet,
   TouchableWithoutFeedback,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
-  TouchableOpacity
+  TouchableOpacity,
+  Keyboard,
 } from "react-native";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
-export default function ChatSection({ visible, onClose }) {
+export default function ChatSection({
+  visible,
+  onClose,
+  placeholder = "Type your reply...",
+  keyboardType = "default",
+}) {
   const inputRef = useRef(null);
-  const [modalTopPosition, setModalTopPosition] = useState(null);
+  const [inputText, setInputText] = useState("");
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
-    if (visible) {
-      const timeout = setTimeout(() => {
-        try {
-          inputRef.current?.focus();
-        } catch (error) {
-          console.error("Focus error:", error);
-        }
-      }, 100);
-      return () => clearTimeout(timeout);
+    const showListener = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
+    const hideListener = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
+    
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
+
+  const handleSubmit = () => {
+    if (inputText.trim().length > 0) {
+      onClose(inputText);
+      setInputText(""); // Reset input after submission
     }
-  }, [visible]);
+  };
 
   return (
     <Modal
       visible={visible}
       animationType="fade"
       transparent
-      onRequestClose={onClose}
+      onRequestClose={() => onClose("")}
       hardwareAccelerated
     >
-      <TouchableWithoutFeedback
-        keyboardShouldPersistTaps="handled"
-      >
+      <TouchableWithoutFeedback>
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.modalContent}
+            style={[
+              styles.modalContent,
+              keyboardType === "default" && isKeyboardVisible ? { minHeight: "50%" } : {}, 
+            ]}
           >
-            <TextInput
-              ref={inputRef}
-              style={styles.input}
-              placeholder="Type your reply..."
-              autoFocus
-            />
-            <View style={styles.rowOfOptions}>
-
+            <View style={styles.inputWrapper}>
+              <TextInput
+                ref={inputRef}
+                style={styles.input}
+                placeholder={placeholder}
+                autoFocus
+                keyboardType={keyboardType}
+                value={inputText}
+                onChangeText={setInputText}
+                onSubmitEditing={handleSubmit}
+                blurOnSubmit={false}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  { backgroundColor: inputText.trim() ? "#1DC0A5" : "#ccc" },
+                ]}
+                onPress={handleSubmit}
+                disabled={!inputText.trim()} // Disable button when input is empty
+              >
+                <FontAwesome6 name="arrow-right" size={20} color="white" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity> </TouchableOpacity>
           </KeyboardAvoidingView>
         </View>
       </TouchableWithoutFeedback>
@@ -72,15 +96,30 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    padding: 20,
+    padding: 25,
     elevation: 5,
-    minHeight: "40%",
+    minHeight: "45%", // Default, adjusted dynamically
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 25, // Keep the rounded look
+    overflow: "hidden",
+    backgroundColor: "white",
   },
   input: {
+    flex: 1,
     fontSize: 18,
-    padding: 10,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    marginBottom: 5,
+    paddingVertical: 12, // Added padding to make it feel less cramped
+    paddingHorizontal: 15,
+    backgroundColor: "transparent",
+  },
+  submitButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 5,
   },
 });

@@ -1,14 +1,34 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Text, StyleSheet, View } from "react-native";
 import Theme from "@/assets/theme";
 
-const TextBubble = ({ moreStyle, text, fromMe=false, triangleOnTop=false}) => {
+const TextBubble = ({ moreStyle, text, fromMe = false, triangleOnTop = false, typingSpeed = 40 }) => {
+  const [displayedText, setDisplayedText] = useState("");
+
+  useEffect(() => {
+    if (!text) return; // Prevent running effect if text is undefined/null
+
+    setDisplayedText(""); // Reset before starting animation
+    let index = 0;
+
+    const interval = setInterval(() => {
+      if (index <= text.length) {
+        setDisplayedText(text.slice(0, index)); // Slicing ensures correct order
+        index++;
+      } else {
+        clearInterval(interval);
+      }
+    }, typingSpeed);
+
+    return () => clearInterval(interval); // Cleanup interval on text change/unmount
+  }, [text, typingSpeed]);
+
   return (
-    <View style={[styles.wrapper, moreStyle, fromMe && myMessage]}>
+    <View style={[styles.wrapper, moreStyle, fromMe && styles.myMessage]}>
       <View style={styles.mainBubble}>
-        <Text style={styles.text}>{text}</Text>
+        <Text style={styles.text}>{displayedText}</Text>
       </View>
-    
+
       {/* Triangle pointing downwards */}
       <View style={[styles.triangle, triangleOnTop && styles.top]} />
     </View>
@@ -17,7 +37,7 @@ const TextBubble = ({ moreStyle, text, fromMe=false, triangleOnTop=false}) => {
 
 const styles = StyleSheet.create({
   wrapper: {
-    alignItems: "center", // Centers the triangle with the bubble
+    alignItems: "center",
     position: "absolute",
     maxWidth: "80%",
     minWidth: "30%",
@@ -34,9 +54,9 @@ const styles = StyleSheet.create({
   },
   triangle: {
     position: "absolute",
-    bottom: -20, // Adjust for placement
+    bottom: -20,
     left: "50%",
-    marginLeft: -15, // Centers the triangle
+    marginLeft: -15,
     width: 0,
     height: 0,
     borderLeftWidth: 15,
@@ -48,9 +68,9 @@ const styles = StyleSheet.create({
   },
   top: {
     top: -20,
-    botton: "auto",
+    bottom: "auto",
     borderBottomColor: "white",
-    transform: [{ rotate: '-180deg' }], // Rotates the text -45 degrees
+    transform: [{ rotate: "-180deg" }],
   },
   text: {
     fontSize: 20,
