@@ -11,16 +11,43 @@ import { avatarImages, bgImages } from "@/assets/imgPaths";
 import { avatarWelcome } from "@/assets/avatarInfo";
 import WorkSession from "@/app/WorkSession";
 
+// CountdownOverlay component: shows a white circle with black text
+function CountdownOverlay({ onFinish }) {
+  const [count, setCount] = useState(3);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          onFinish(); // Move to timer when countdown is done
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [onFinish]);
+
+  return (
+    <View style={styles.countdownOverlay}>
+      <View style={styles.countdownCircle}>
+        <Text style={styles.countdownNumber}>{count}</Text>
+      </View>
+    </View>
+  );
+}
+
 export default function SetupSession() {
   const [avatarName, setAvatarName] = useState("Loading...");
   const [avatarDesc, setAvatarDesc] = useState("Loading...");
   const [isLoading, setIsLoading] = useState(true);
   const [chosenBg, chooseBg] = useState("bedroom");
 
-  // Flow stages: "intro", "workTopic", "timeInput", "startSession", "timer"
+  // Flow stages: "intro", "workTopic", "timeInput", "startSession", "countdown", "timer"
   const [sessionStage, setSessionStage] = useState("intro");
   const [workTopic, setWorkTopic] = useState("");
-  const [sessionDuration, setSessionDuration] = useState(0); // duration in seconds
+  const [sessionDuration, setSessionDuration] = useState(0); // in seconds
 
   const navigation = useNavigation();
 
@@ -107,13 +134,12 @@ export default function SetupSession() {
             onClose={(message) => {
               const durationInSeconds = parseInt(message, 10) * 60;
               setSessionDuration(durationInSeconds);
-              setSessionStage("startSession"); // <-- Go to new "startSession" stage
+              setSessionStage("startSession");
             }}
           />
         </>
       )}
 
-      {/* New Confirmation Screen */}
       {sessionStage === "startSession" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
@@ -122,32 +148,29 @@ export default function SetupSession() {
             text={"Sounds good! I'll start on my assignment too."}
           />
 
-          {/* Display chosen session time in a small bubble */}
+          {/* User's text bubble above the bottom sheet */}
           <View style={styles.userTextBubble}>
             <Text style={styles.timeText}>
               {Math.floor(sessionDuration / 60)} minutes!
             </Text>
           </View>
 
-          {/* Bottom sheet style container */}
+          {/* Bottom sheet confirmation */}
           <View style={styles.bottomSheet}>
-            {/* Back arrow to go back to timeInput */}
             <TouchableOpacity
               onPress={() => setSessionStage("timeInput")}
               style={styles.backButton}
             >
               <Text style={styles.backText}>←</Text>
             </TouchableOpacity>
-
             <Text style={styles.sessionText}>
               This is a {Math.floor(sessionDuration / 60)} minute work session.
             </Text>
             <Text style={styles.subText}>
               Feel free to incorporate as many breaks as you need
             </Text>
-
             <TouchableOpacity
-              onPress={() => setSessionStage("timer")}
+              onPress={() => setSessionStage("countdown")}
               style={styles.startButton}
             >
               <Text style={styles.startButtonText}>
@@ -156,6 +179,10 @@ export default function SetupSession() {
             </TouchableOpacity>
           </View>
         </>
+      )}
+
+      {sessionStage === "countdown" && (
+        <CountdownOverlay onFinish={() => setSessionStage("timer")} />
       )}
 
       {sessionStage === "timer" && (
@@ -191,7 +218,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     zIndex: -2,
   },
-  /* Styles for new "startSession" screen */
   userTextBubble: {
     position: "absolute",
     backgroundColor: "#B5F2EA",
@@ -212,7 +238,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: 300,
+    height: 300, // approximate keyboard height
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -250,5 +276,24 @@ const styles = StyleSheet.create({
   startButtonText: {
     fontSize: 18,
     fontWeight: "bold",
+  },
+  countdownOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  countdownCircle: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  countdownNumber: {
+    fontSize: 80,
+    fontWeight: "bold",
+    color: "#000",
   },
 });
