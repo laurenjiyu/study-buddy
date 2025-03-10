@@ -13,7 +13,7 @@ import db from "@/database/db";
 import AvatarChoice from "@/components/AvatarChoice";
 import Button from "@/components/Button";
 import { useNavigation } from '@react-navigation/native';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import Theme from "@/assets/theme";
 
@@ -30,40 +30,22 @@ export default function Login() {
     try {
       console.log("Selected Avatar:", selectedAvatar);
   
-      // Step 1: Fetch the avatar ID using the selected avatar name
-      const { data: avatarData, error: avatarError } = await db
-        .from("avatar-options")
-        .select("id")
-        .eq("name", selectedAvatar)
-        .maybeSingle(); 
-  
-      if (avatarError || !avatarData) {
-        Alert.alert("Error", "Invalid avatar selection. Please try again.");
+      if (!selectedAvatar) {
+        Alert.alert("Error", "Please select an avatar before proceeding.");
         return;
       }
   
-      const avatarId = avatarData.id; // Get the correct avatar ID
-      console.log("Selected Avatar ID:", avatarId);
-  
-      // Update the row where id=1
-      const { error: updateError } = await db
-        .from("user-info")
-        .update({ chosen_avatar: avatarId, time_worked: 0 })  // No array here, use an object
-        .eq("id", 1);  // Only update row where id=1
-  
-      if (updateError) {
-        console.error("Error choosing avatar:", updateError.message);
-        Alert.alert("Error", updateError.message);
-        return;
-      }
+      // Store the selected avatar in AsyncStorage
+      await AsyncStorage.setItem("chosen_avatar", selectedAvatar);
+      await AsyncStorage.setItem("time_worked", JSON.stringify(0)); // Store number as string
   
       console.log("Success", `You have chosen ${selectedAvatar}!`);
       navigation.navigate("AboutAvatar");
     } catch (err) {
       console.error("Unexpected error updating avatar:", err.message);
+      Alert.alert("Error", "Could not save avatar selection.");
     }
   };
-  
   
 
   return (

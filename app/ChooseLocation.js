@@ -1,22 +1,14 @@
 import { useState, useEffect } from "react";
-import {
-  Text,
-  Alert,
-  Image,
-  StyleSheet,
-  View,
-  TouchableOpacity,
-} from "react-native";
+import { Text, Alert, Image, StyleSheet, View, TouchableOpacity } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
-import db from "@/database/db";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 import Button from "@/components/Button";
 import Theme from "@/assets/theme";
-import  { avatarImages, bgImages } from "@/assets/imgPaths";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; 
+import { avatarImages, bgImages } from "@/assets/imgPaths";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; // Import FontAwesome for back icon
 
-export default function AboutAvatar() {
-  const [avatarId, setAvatarId] = useState(null);
+export default function ChooseLocation() {
   const [avatarName, setAvatarName] = useState("Loading...");
   const [avatarDesc, setAvatarDesc] = useState("Loading...");
   const [isLoading, setIsLoading] = useState(true);
@@ -25,25 +17,15 @@ export default function AboutAvatar() {
   const navigation = useNavigation();
 
   const getBgImage = (name) => bgImages[name] || bgImages.bedroom;
-
   const getAvatarImage = (name) => avatarImages[name];
-  
+
   const confirmBg = async () => {
     try {
       console.log("Selected background:", chosenBg);
 
-      // Update the row where id=1
-      const { error: updateError } = await db
-        .from("user-info")
-        .update({ chosen_background: chosenBg})  // No array here, use an object
-        .eq("id", 1);  // Only update row where id=1
-  
-      if (updateError) {
-        console.error("Error choosing background:", updateError.message);
-        Alert.alert("Error", updateError.message);
-        return;
-      }
-  
+      // Store chosen background in AsyncStorage
+      await AsyncStorage.setItem("chosen_background", chosenBg);
+
       console.log("Success", `You have chosen ${chosenBg}!`);
       navigation.navigate("SetupSession");
     } catch (err) {
@@ -55,46 +37,22 @@ export default function AboutAvatar() {
     try {
       setIsLoading(true);
 
-      // Get the chosen avatar ID from `user-info`
-      const { data: userInfo, error: userInfoError } = await db
-        .from("user-info")
-        .select("chosen_avatar")
-        .eq("id", 1)
-        .maybeSingle();
+      // Retrieve avatar name and description from AsyncStorage
+      const storedAvatar = await AsyncStorage.getItem("chosen_avatar");
+      const storedAvatarDesc = await AsyncStorage.getItem("avatar_description");
 
-      if (userInfoError || !userInfo?.chosen_avatar) {
-        console.error("Error fetching user-info:", userInfoError?.message);
+      if (!storedAvatar) {
+        console.error("No avatar found in AsyncStorage.");
         setAvatarName("Unknown");
         setAvatarDesc("No description available.");
-        setIsLoading(false);
         return;
       }
 
-      const avatarId = userInfo.chosen_avatar;
-      setAvatarId(avatarId);
-      console.log("Fetched Avatar ID:", avatarId);
-
-      // Get the avatar name & description from `avatar-options`
-      const { data: avatarData, error: avatarError } = await db
-        .from("avatar-options")
-        .select("name, intro_desc")
-        .eq("id", avatarId)
-        .maybeSingle();
-
-      if (avatarError || !avatarData) {
-        console.error("Error fetching avatar details:", avatarError?.message);
-        setAvatarName("Unknown");
-        setAvatarDesc("No description available.");
-        setIsLoading(false);
-        return;
-      }
-
-      // Update state with fetched data
-      setAvatarName(avatarData.name);
-      setAvatarDesc(avatarData.intro_desc);
-      console.log("Fetched Avatar:", avatarData.name, avatarData.intro_desc);
+      console.log("Fetched Avatar:", storedAvatar);
+      setAvatarName(storedAvatar);
+      setAvatarDesc(storedAvatarDesc || "No description available.");
     } catch (err) {
-      console.error("Unexpected error fetching avatar:", err.message);
+      console.error("Error fetching avatar:", err.message);
       setAvatarName("Unknown");
       setAvatarDesc("No description available.");
     } finally {
@@ -114,7 +72,7 @@ export default function AboutAvatar() {
       >
         <Image
           source={bgImages[setting]}
-          style={[styles.imagePreview, chosenBg != setting && styles.inactive]}
+          style={[styles.imagePreview, chosenBg !== setting && styles.inactive]}
         />
       </TouchableOpacity>
     );
@@ -124,15 +82,8 @@ export default function AboutAvatar() {
     <View style={styles.container}>
       <StatusBar style="dark" />
       {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <FontAwesome6
-          name="arrow-left"
-          size={24}
-          color={Theme.colors.textPrimary}
-        />
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <FontAwesome6 name="arrow-left" size={24} color={Theme.colors.textPrimary} />
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
       <View style={styles.circle} />
@@ -157,7 +108,6 @@ export default function AboutAvatar() {
       <View style={styles.backgroundWrapper}>
         <Image source={getBgImage(chosenBg)} style={styles.backgroundImg} />
         <Image source={getAvatarImage(avatarName)} style={styles.avatarImg} />
-
       </View>
 
       <Button
@@ -251,10 +201,10 @@ const styles = StyleSheet.create({
   },
   backgroundWrapper: {
     width: "100%",
-    height: 250, 
+    height: 250,
     alignItems: "center",
     justifyContent: "center",
-    position: "relative", 
+    position: "relative",
     marginBottom: 20,
     marginTop: 30,
   },

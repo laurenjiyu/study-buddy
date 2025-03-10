@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Text, Image, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
-import db from "@/database/db";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 import Button from "@/components/Button";
 import TextBubble from "@/components/TextBubble";
 import Theme from "@/assets/theme";
@@ -10,59 +10,40 @@ import ChatSection from "@/components/ChatSection";
 import AvatarAnimation from "@/components/AvatarAnimation";
 import { avatarImages, bgImages } from "@/assets/imgPaths";
 import { avatarWelcome } from "@/assets/avatarInfo";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; // Import FontAwesome for back icon
 
 export default function SetupSession() {
   const [avatarName, setAvatarName] = useState("Loading...");
   const [avatarDesc, setAvatarDesc] = useState("Loading...");
   const [isLoading, setIsLoading] = useState(true);
   const [chosenBg, chooseBg] = useState("bedroom");
-  const [chatVisible, setChatVisible] = useState(false); // Toggle if the chat with the avatar is visible
+  const [chatVisible, setChatVisible] = useState(false); // Toggle chat visibility
 
   const navigation = useNavigation();
 
-  const getBgImage = (name) => bgImages[chosenBg];
+  const getBgImage = (name) => bgImages[name] || bgImages.bedroom;
 
   const fetchAvatar = async () => {
     try {
       setIsLoading(true);
 
-      const { data: userInfo, error: userInfoError } = await db
-        .from("user-info")
-        .select("chosen_avatar, chosen_background")
-        .eq("id", 1)
-        .maybeSingle();
+      // Retrieve avatar details and background from AsyncStorage
+      const storedAvatar = await AsyncStorage.getItem("chosen_avatar");
+      const storedAvatarDesc = await AsyncStorage.getItem("avatar_description");
+      const storedBg = await AsyncStorage.getItem("chosen_background");
 
-      if (userInfoError || !userInfo?.chosen_avatar) {
-        console.error("Error fetching user-info:", userInfoError?.message);
+      if (!storedAvatar) {
+        console.error("No avatar found in AsyncStorage.");
         setAvatarName("Unknown");
         setAvatarDesc("No description available.");
-        setIsLoading(false);
         return;
       }
 
-      const avatarId = userInfo.chosen_avatar;
-      chooseBg(userInfo.chosen_background);
-      console.log("Fetched Avatar ID:", avatarId);
-
-      const { data: avatarData, error: avatarError } = await db
-        .from("avatar-options")
-        .select("name, intro_desc")
-        .eq("id", avatarId)
-        .maybeSingle();
-
-      if (avatarError || !avatarData) {
-        console.error("Error fetching avatar details:", avatarError?.message);
-        setAvatarName("Unknown");
-        setAvatarDesc("No description available.");
-        setIsLoading(false);
-        return;
-      }
-
-      setAvatarName(avatarData.name);
-      console.log("Fetched Avatar:", avatarData.name, avatarData.intro_desc);
+      console.log("Fetched Avatar:", storedAvatar);
+      setAvatarName(storedAvatar);
+      setAvatarDesc(storedAvatarDesc || "No description available.");
+      chooseBg(storedBg || "bedroom"); // Set background, default to bedroom if not found
     } catch (err) {
-      console.error("Unexpected error fetching avatar:", err.message);
+      console.error("Error fetching avatar:", err.message);
       setAvatarName("Unknown");
       setAvatarDesc("No description available.");
     } finally {
@@ -80,13 +61,13 @@ export default function SetupSession() {
       {/* Background Image */}
       <Image source={getBgImage(chosenBg)} style={styles.backgroundImg} />
 
-      {/* The intro greeting + animation */}
+      {/* Intro greeting + animation */}
       {!chatVisible ? (
         <>
           <AvatarAnimation avatarName={avatarName} />
           <TextBubble
             moreStyle={styles.textBubble}
-            text={avatarWelcome[avatarName]}
+            text={avatarWelcome[avatarName] || "Hello there!"}
           />
           <Button
             style={styles.button}

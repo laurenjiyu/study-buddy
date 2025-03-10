@@ -8,6 +8,7 @@ import Theme from "@/assets/theme";
 import  { avatarImages } from "@/assets/imgPaths";
 import { introDesc } from "@/assets/avatarInfo";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; // Import FontAwesome for back icon
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AboutAvatar() {
   const [avatarId, setAvatarId] = useState(null);
@@ -19,44 +20,20 @@ export default function AboutAvatar() {
   const fetchAvatar = async () => {
     try {
       setIsLoading(true);
+      
+      // Retrieve the selected avatar from AsyncStorage
+      const storedAvatar = await AsyncStorage.getItem("chosen_avatar");
 
-      // Get the chosen avatar ID from `user-info`
-      const { data: userInfo, error: userInfoError } = await db
-        .from("user-info")
-        .select("chosen_avatar")
-        .eq("id", 1)
-        .maybeSingle();
-
-      if (userInfoError || !userInfo?.chosen_avatar) {
-        console.error("Error fetching user-info:", userInfoError?.message);
+      if (!storedAvatar) {
+        console.error("No avatar found in AsyncStorage.");
         setAvatarName("Unknown");
-        setIsLoading(false);
         return;
       }
 
-      const avatarId = userInfo.chosen_avatar;
-      setAvatarId(avatarId);
-      console.log("Fetched Avatar ID:", avatarId);
-
-      // Get the avatar name & description from `avatar-options`
-      const { data: avatarData, error: avatarError } = await db
-        .from("avatar-options")
-        .select("name")
-        .eq("id", avatarId)
-        .maybeSingle();
-
-      if (avatarError || !avatarData) {
-        console.error("Error fetching avatar details:", avatarError?.message);
-        setAvatarName("Unknown");
-        setIsLoading(false);
-        return;
-      }
-
-      // Update state with fetched data
-      setAvatarName(avatarData.name);
-      console.log("Fetched Avatar:", avatarData.name);
+      console.log("Fetched Avatar:", storedAvatar);
+      setAvatarName(storedAvatar); // Update UI with stored avatar
     } catch (err) {
-      console.error("Unexpected error fetching avatar:", err.message);
+      console.error("Error fetching avatar:", err.message);
       setAvatarName("Unknown");
     } finally {
       setIsLoading(false);
