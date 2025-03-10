@@ -20,7 +20,7 @@ function CountdownOverlay({ onFinish }) {
       setCount((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          onFinish(); // Move to timer when countdown is done
+          onFinish();
           return 0;
         }
         return prev - 1;
