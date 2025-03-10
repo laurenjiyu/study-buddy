@@ -35,7 +35,7 @@ export default function ChatSection({
   const handleSubmit = () => {
     if (inputText.trim().length > 0) {
       onClose(inputText);
-      setInputText(""); // Reset input after submission
+      setInputText("");
     }
   };
 
@@ -98,19 +98,19 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 30,
     padding: 25,
     elevation: 5,
-    minHeight: "45%", // Default, adjusted dynamically
+    minHeight: "45%",
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 25, // Keep the rounded look
+    borderRadius: 25,
     overflow: "hidden",
     backgroundColor: "white",
   },
   input: {
     flex: 1,
     fontSize: 18,
-    paddingVertical: 12, // Added padding to make it feel less cramped
+    paddingVertical: 12,
     paddingHorizontal: 15,
     backgroundColor: "transparent",
   },

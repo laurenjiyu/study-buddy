@@ -6,21 +6,21 @@ const TextBubble = ({ moreStyle, text, fromMe = false, triangleOnTop = false, ty
   const [displayedText, setDisplayedText] = useState("");
 
   useEffect(() => {
-    if (!text) return; // Prevent running effect if text is undefined/null
+    if (!text) return;
 
-    setDisplayedText(""); // Reset before starting animation
+    setDisplayedText("");
     let index = 0;
 
     const interval = setInterval(() => {
       if (index <= text.length) {
-        setDisplayedText(text.slice(0, index)); // Slicing ensures correct order
+        setDisplayedText(text.slice(0, index));
         index++;
       } else {
         clearInterval(interval);
       }
     }, typingSpeed);
 
-    return () => clearInterval(interval); // Cleanup interval on text change/unmount
+    return () => clearInterval(interval);
   }, [text, typingSpeed]);
 
   return (
@@ -29,7 +29,6 @@ const TextBubble = ({ moreStyle, text, fromMe = false, triangleOnTop = false, ty
         <Text style={styles.text}>{displayedText}</Text>
       </View>
 
-      {/* Triangle pointing downwards */}
       <View style={[styles.triangle, triangleOnTop && styles.top]} />
     </View>
   );
