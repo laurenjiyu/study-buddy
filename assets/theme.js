@@ -28,7 +28,6 @@ export default {
   },
   sizes: {
     iconSmall: 16,
-
     textMedium: 16,
     textLarge: 20,
   },

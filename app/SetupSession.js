@@ -1,35 +1,27 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  Text,
-  Alert,
-  Image,
-  StyleSheet,
-  View,
-  Animated,
-  Easing,
-} from "react-native";
+import { Text, Image, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import db from "@/database/db";
 import Button from "@/components/Button";
 import TextBubble from "@/components/TextBubble";
 import Theme from "@/assets/theme";
+import ChatSection from "@/components/ChatSection";
+import AvatarAnimation from "@/components/AvatarAnimation";
 import { avatarImages, bgImages } from "@/assets/imgPaths";
 import { avatarWelcome } from "@/assets/avatarInfo";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; // Import FontAwesome for back icon
 
-export default function AboutAvatar() {
-  const [avatarId, setAvatarId] = useState(null);
+export default function SetupSession() {
   const [avatarName, setAvatarName] = useState("Loading...");
   const [avatarDesc, setAvatarDesc] = useState("Loading...");
   const [isLoading, setIsLoading] = useState(true);
   const [chosenBg, chooseBg] = useState("bedroom");
+  const [chatVisible, setChatVisible] = useState(false); // Toggle if the chat with the avatar is visible
 
   const navigation = useNavigation();
-  const tiltAnimation = useRef(new Animated.Value(0)).current;
 
   const getBgImage = (name) => bgImages[chosenBg];
-  const getAvatarImage = (name) => avatarImages[name];
 
   const fetchAvatar = async () => {
     try {
@@ -50,7 +42,6 @@ export default function AboutAvatar() {
       }
 
       const avatarId = userInfo.chosen_avatar;
-      setAvatarId(avatarId);
       chooseBg(userInfo.chosen_background);
       console.log("Fetched Avatar ID:", avatarId);
 
@@ -69,7 +60,6 @@ export default function AboutAvatar() {
       }
 
       setAvatarName(avatarData.name);
-      setAvatarDesc(avatarData.intro_desc);
       console.log("Fetched Avatar:", avatarData.name, avatarData.intro_desc);
     } catch (err) {
       console.error("Unexpected error fetching avatar:", err.message);
@@ -84,56 +74,36 @@ export default function AboutAvatar() {
     fetchAvatar();
   }, []);
 
-  // Animations for avatar
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(tiltAnimation, {
-          toValue: 1,
-          duration: 800, // Adjust duration for smooth effect
-          easing: Easing.inOut(Easing.ease), // Smooth acceleration & deceleration
-          useNativeDriver: true,
-        }),
-        Animated.timing(tiltAnimation, {
-          toValue: 0,
-          duration: 800, // Keep same duration for symmetry
-          easing: Easing.inOut(Easing.ease), // Smooth transition back
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
-  
-  const tiltInterpolation = tiltAnimation.interpolate({
-    inputRange: [0, 1], 
-    outputRange: ["-10deg", "10deg"], // Smooth swaying motion
-  });
-
-  const bubbleContents = (
-    <View>
-        <Text style={styles.text}>{avatarWelcome[avatarName]}</Text>
-    </View>
-    );
-  
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
       {/* Background Image */}
       <Image source={getBgImage(chosenBg)} style={styles.backgroundImg} />
-      
-      <Animated.Image
-        source={getAvatarImage(avatarName)}
-        style={[styles.avatarImg, { transform: [{ rotate: tiltInterpolation }] }]}
-      />
-      
-      <TextBubble moreStyle={styles.textBubble} contents={bubbleContents} ></TextBubble>
 
-      <Button
-        style={styles.button}
-        clickable={true}
-        text="Next"
-        onPress={() => navigation.navigate("NextScreen")}
-      />
+      {/* The intro greeting + animation */}
+      {!chatVisible ? (
+        <>
+          <AvatarAnimation avatarName={avatarName} />
+          <TextBubble
+            moreStyle={styles.textBubble}
+            text={avatarWelcome[avatarName]}
+          />
+          <Button
+            style={styles.button}
+            clickable={true}
+            text="Next"
+            onPress={() => setChatVisible(true)}
+          />
+        </>
+      ) : (
+        <>
+          <Image style={styles.avatarImg} source={avatarImages[avatarName]} />
+          <ChatSection
+            visible={chatVisible}
+            onClose={() => setChatVisible(false)}
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -159,8 +129,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   avatarImg: {
-    height: 400,
-    width: 400,
+    height: 300,
+    width: 300,
     marginTop: 190,
     alignSelf: "center",
     resizeMode: "contain",
@@ -174,4 +144,3 @@ const styles = StyleSheet.create({
     zIndex: -2,
   },
 });
-

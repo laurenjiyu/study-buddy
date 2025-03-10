@@ -2,11 +2,11 @@ import React from "react";
 import { Text, StyleSheet, View } from "react-native";
 import Theme from "@/assets/theme";
 
-const TextBubble = ({ moreStyle, text, contents, fromMe=false, triangleOnTop=false}) => {
+const TextBubble = ({ moreStyle, text, fromMe=false, triangleOnTop=false}) => {
   return (
     <View style={[styles.wrapper, moreStyle, fromMe && myMessage]}>
       <View style={styles.mainBubble}>
-        {contents}
+        <Text style={styles.text}>{text}</Text>
       </View>
     
       {/* Triangle pointing downwards */}
@@ -54,6 +54,8 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 20,
+    textAlign: "center",
+    alignSelf: "center",
   },
 });
 

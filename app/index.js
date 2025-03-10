@@ -65,6 +65,6 @@ export default function App() {
   } else if (isLoading) {
     return <Loading />;
   } else {
-    return <ChooseAvatar />;
+    return <SetupSession />;
   }
 }
