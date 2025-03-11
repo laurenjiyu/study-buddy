@@ -1,0 +1,27 @@
+name: Run OpenAI Script
+
+on: [push]
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v16
+
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Debug OpenAI API Key
+        run: |
+          echo "Key Length: ${#OPENAI_API_KEY}"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Run OpenAI
+        run: node OpenAI.js
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} 
