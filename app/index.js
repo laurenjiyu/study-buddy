@@ -48,14 +48,14 @@ export default function App() {
     return <Loading />; 
   }
 
-  // Override default Text styles
+  // Override default Text styles so all fonts are Nunito
   const defaultTextStyle = { fontFamily: 'Nunito' };
 
   const originalTextRender = Text.render;
   Text.render = function render(props, ref) {
     return originalTextRender.call(this, {
       ...props,
-      style: [defaultTextStyle, props.style], // Ensures Nunito is always applied
+      style: [defaultTextStyle, props.style], 
       ref,
     });
   };

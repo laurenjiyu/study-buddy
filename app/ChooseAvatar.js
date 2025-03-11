@@ -37,7 +37,7 @@ export default function Login() {
   
       // Store the selected avatar in AsyncStorage
       await AsyncStorage.setItem("chosen_avatar", selectedAvatar);
-      await AsyncStorage.setItem("time_worked", JSON.stringify(0)); // Store number as string
+      await AsyncStorage.setItem("time_worked", JSON.stringify(0)); 
   
       console.log("Success", `You have chosen ${selectedAvatar}!`);
       navigation.navigate("AboutAvatar");
@@ -74,12 +74,12 @@ const styles = StyleSheet.create({
   },
   circle: {
     position: "absolute",
-    bottom: -50, // Move it slightly down so it looks embedded
+    bottom: -50,
     alignSelf: "center",
-    width: 450, // Circle size
-    height: 500, // Circle size
-    borderRadius: 150, // Makes it a perfect circle
-    backgroundColor: "white", // White background
+    width: 450, 
+    height: 500,
+    borderRadius: 150, 
+    backgroundColor: "white", 
   },
   choices: {
     justifyContent: "space-between",

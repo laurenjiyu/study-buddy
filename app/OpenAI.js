@@ -1,7 +1,11 @@
 import OpenAI from "openai";
 
+const key = process.env.OPENAI_API_KEY;
 
-const key = ""
+if (!key) {
+  console.error("Error: Missing OpenAI API Key!");
+  process.exit(1);
+}
 
 const openai = new OpenAI({apiKey: key});
 
