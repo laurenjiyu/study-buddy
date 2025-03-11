@@ -4,37 +4,15 @@ import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Button from "@/components/Button";
-import TextBubble from "@/components/TextBubble";
 import ChatSection from "@/components/ChatSection";
 import AvatarAnimation from "@/components/AvatarAnimation";
 import CountdownOverlay from "@/components/CountdownOverlay";
 import { bgImages } from "@/assets/imgPaths";
 import WorkSession from "@/app/WorkSession";
-import { getCompletion } from "./OpenAI";
-
-function AITextBubble({ prompt, moreStyle }) {
-  const [text, setText] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchText() {
-      setLoading(true);
-      const response = await getCompletion(prompt);
-      setText(response);
-      setLoading(false);
-    }
-    fetchText();
-  }, [prompt]);
-
-  return (
-    <TextBubble moreStyle={moreStyle} text={loading ? "..." : text} />
-  );
-}
+import AITextBubble from "@/components/AITextBubble";
 
 export default function SetupSession() {
   const [avatarName, setAvatarName] = useState("Loading...");
-  const [avatarDesc, setAvatarDesc] = useState("Loading...");
-  const [isLoading, setIsLoading] = useState(true);
   const [chosenBg, chooseBg] = useState("bedroom");
 
   // Flow stages: 
