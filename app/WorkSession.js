@@ -8,11 +8,8 @@ import { getCompletion } from "./OpenAI";
 import { workingImages } from "@/assets/imgPaths";
 
 export default function WorkSession({ sessionDuration, avatarName, onSessionEnd }) {
-  // Tracks how many seconds of work have been completed
   const [workingSeconds, setWorkingSeconds] = useState(0);
-  // Tracks total seconds spent on breaks
   const [breakSeconds, setBreakSeconds] = useState(0);
-  // Used to calculate how long a pause lasts
   const [pauseStartTime, setPauseStartTime] = useState(null);
 
   const [timerPaused, setTimerPaused] = useState(false);
@@ -95,7 +92,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
     try {
       setShowMotivation(false);
       const message = await getCompletion(
-        "provide a brief sentence of motivation for the user. the user selected a positive, supportive character persona."
+        `Persona: ${avatarName}. Provide a brief sentence of motivation for the user.`
       );
       setMotivationText(message);
       setShowMotivation(true);
