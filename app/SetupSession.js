@@ -10,6 +10,27 @@ import AvatarAnimation from "@/components/AvatarAnimation";
 import { bgImages } from "@/assets/imgPaths";
 import { avatarWelcome } from "@/assets/avatarInfo";
 import WorkSession from "@/app/WorkSession";
+import { getCompletion } from "./OpenAI";
+
+// New component to fetch and display API-based text
+function APIBasedTextBubble({ prompt, moreStyle }) {
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchText() {
+      setLoading(true);
+      const response = await getCompletion(prompt);
+      setText(response);
+      setLoading(false);
+    }
+    fetchText();
+  }, [prompt]);
+
+  return (
+    <TextBubble moreStyle={moreStyle} text={loading ? "..." : text} />
+  );
+}
 
 function CountdownOverlay({ onFinish }) {
   const [count, setCount] = useState(3);
@@ -108,9 +129,9 @@ export default function SetupSession() {
       {sessionStage === "workTopic" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
-          <TextBubble
+          <APIBasedTextBubble
+            prompt={`Persona: ${avatarName}. Ask the user what they'd like to work on today. For example, Positive Percy may say 'It's so good to see you! What are we working on today?'`}
             moreStyle={styles.textBubble}
-            text={"What are we working on today?"}
           />
           <ChatSection
             visible={sessionStage === "workTopic"}
@@ -126,9 +147,9 @@ export default function SetupSession() {
       {sessionStage === "timeInput" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
-          <TextBubble
+          <APIBasedTextBubble
+            prompt={`Persona: ${avatarName}. To mirror the concept of body doubling, act like you are working on a similar task as the user. Then, ask how long they'd like to work for. User task: ${workTopic}`}
             moreStyle={styles.textBubble}
-            text={"How long should we work for?"}
           />
           <ChatSection
             visible={sessionStage === "timeInput"}
@@ -147,17 +168,15 @@ export default function SetupSession() {
       {sessionStage === "startSession" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
-          <TextBubble
+          <APIBasedTextBubble
+            prompt={`Persona: ${avatarName}. Tell the user that you are both getting started on your work.`}
             moreStyle={styles.textBubble}
-            text={"Sounds good! I'll start on my assignment too."}
           />
-
           <View style={styles.userTextBubble}>
             <Text style={styles.timeText}>
               {Math.floor(sessionDuration / 60)} minutes!
             </Text>
           </View>
-
           <View style={styles.bottomSheet}>
             <TouchableOpacity
               onPress={() => setSessionStage("timeInput")}
@@ -185,9 +204,7 @@ export default function SetupSession() {
 
       {/* 5) Countdown Stage */}
       {sessionStage === "countdown" && (
-        <CountdownOverlay
-          onFinish={() => setSessionStage("timer")}
-        />
+        <CountdownOverlay onFinish={() => setSessionStage("timer")} />
       )}
 
       {/* 6) Timer Stage */}
@@ -203,9 +220,9 @@ export default function SetupSession() {
       {sessionStage === "sessionEnded" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
-          <TextBubble
+          <APIBasedTextBubble
+            prompt={`Persona: ${avatarName}. You have just finished a work session. Congratulate the user.`}
             moreStyle={styles.textBubble}
-            text={"Thanks for the session! Let’s study again soon."}
           />
           <Button
             style={[styles.button, { bottom: 150 }]}
