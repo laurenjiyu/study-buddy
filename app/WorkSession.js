@@ -2,14 +2,21 @@ import React, { useState, useEffect, useRef } from "react";
 import { Text, View, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import WorkingAvatar from "@/components/WorkingAvatar";
+import TextBubble from "@/components/TextBubble";
 
-export default function WorkSession({ sessionDuration, onQuit, avatarName }) {
+export default function WorkSession({ sessionDuration, avatarName, onSessionEnd }) {
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerPaused, setTimerPaused] = useState(false);
-  const [showEndModal, setShowEndModal] = useState(false); // <-- NEW: For the confirmation popup
-
+  const [showEndModal, setShowEndModal] = useState(false);
   const timerRef = useRef(null);
   const progressAnim = useRef(new Animated.Value(0)).current;
+
+  const [showMotivation, setShowMotivation] = useState(false);
+  const [motivationText, setMotivationText] = useState("");
+
+  const getMotivation = () => {
+    return "Keep going, you're doing great!";
+  };
 
   // -------------------- TIMER LOGIC --------------------
   useEffect(() => {
@@ -18,6 +25,7 @@ export default function WorkSession({ sessionDuration, onQuit, avatarName }) {
         setTimerSeconds((prev) => {
           if (prev >= sessionDuration) {
             clearInterval(timerRef.current);
+            onSessionEnd();
             return sessionDuration;
           }
           return prev + 1;
@@ -25,7 +33,7 @@ export default function WorkSession({ sessionDuration, onQuit, avatarName }) {
       }, 1000);
     }
     return () => clearInterval(timerRef.current);
-  }, [timerPaused]);
+  }, [timerPaused, sessionDuration]);
 
   useEffect(() => {
     Animated.timing(progressAnim, {
@@ -33,7 +41,7 @@ export default function WorkSession({ sessionDuration, onQuit, avatarName }) {
       duration: 1000,
       useNativeDriver: false,
     }).start();
-  }, [timerSeconds]);
+  }, [timerSeconds, sessionDuration]);
 
   // -------------------- HANDLERS --------------------
   const handlePause = () => {
@@ -51,19 +59,22 @@ export default function WorkSession({ sessionDuration, onQuit, avatarName }) {
   };
 
   const handleQuit = () => {
-    // Actually quits the session
     clearInterval(timerRef.current);
-    onQuit();
+    onSessionEnd();
   };
 
-  // This is called when user taps the X button
   const handleShowEndModal = () => {
-    // Pause timer, then show the popup
     handlePause();
     setShowEndModal(true);
   };
 
-  // Format time as HH:MM:SS
+  const handleAvatarPress = () => {
+    const message = getMotivation();
+    setMotivationText(message);
+    setShowMotivation(true);
+    setTimeout(() => setShowMotivation(false), 3000);
+  };
+
   const formatTime = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -73,17 +84,24 @@ export default function WorkSession({ sessionDuration, onQuit, avatarName }) {
 
   return (
     <>
-      <WorkingAvatar avatarName={avatarName} />
+      <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8}>
+        <WorkingAvatar avatarName={avatarName} />
+      </TouchableOpacity>
+
+      {showMotivation && (
+        <TextBubble
+          moreStyle={styles.motivationBubble}
+          text={motivationText}
+        />
+      )}
 
       <View style={styles.container}>
-        {/* Timer Display */}
         <View style={styles.timerContainer}>
           <Text style={styles.timerText}>
             {formatTime(sessionDuration - timerSeconds)}
           </Text>
         </View>
 
-        {/* Progress Bar */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressTitle}>
             Working - {Math.floor(sessionDuration / 60)} min
@@ -106,45 +124,32 @@ export default function WorkSession({ sessionDuration, onQuit, avatarName }) {
           </View>
         </View>
 
-        {/* Controls */}
         <View style={styles.controls}>
-          {/* Skip/fast-forward button (not implemented yet) */}
           <TouchableOpacity style={styles.controlButton}>
             <FontAwesome6 name="forward-fast" size={20} color="black" />
           </TouchableOpacity>
-
-          {/* Pause / Resume */}
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={timerPaused ? handleResume : handlePause}
-          >
+          <TouchableOpacity style={styles.controlButton} onPress={timerPaused ? handleResume : handlePause}>
             <FontAwesome6 name={timerPaused ? "play" : "pause"} size={20} color="black" />
           </TouchableOpacity>
-
-          {/* Show the "End Session?" popup instead of quitting immediately */}
           <TouchableOpacity style={styles.controlButton} onPress={handleShowEndModal}>
             <FontAwesome6 name="xmark" size={20} color="black" />
           </TouchableOpacity>
         </View>
 
-        {/* -------------------- END SESSION POPUP -------------------- */}
         {showEndModal && (
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <Text style={styles.modalTitle}>Ending the Session?</Text>
               
-              <TouchableOpacity
-                style={styles.quitButton}
-                onPress={handleQuit}
-              >
+              <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
                 <Text style={styles.quitButtonText}>Quit</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.keepGoingButton}
                 onPress={() => {
-                  setShowEndModal(false); // Hide popup
-                  handleResume();         // Resume timer
+                  setShowEndModal(false);
+                  handleResume();
                 }}
               >
                 <Text style={styles.keepGoingButtonText}>No, keep going</Text>
@@ -157,7 +162,6 @@ export default function WorkSession({ sessionDuration, onQuit, avatarName }) {
   );
 }
 
-// -------------------- STYLES --------------------
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -224,10 +228,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // -------------------- MODAL STYLES --------------------
+  motivationBubble: {
+    position: "absolute",
+    top: 250,
+    alignSelf: "center",
+    zIndex: 2,
+  },
+
   modalOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)", // Dim background
+    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
   },

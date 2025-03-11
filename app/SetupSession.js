@@ -7,11 +7,10 @@ import Button from "@/components/Button";
 import TextBubble from "@/components/TextBubble";
 import ChatSection from "@/components/ChatSection";
 import AvatarAnimation from "@/components/AvatarAnimation";
-import { avatarImages, bgImages } from "@/assets/imgPaths";
+import { bgImages } from "@/assets/imgPaths";
 import { avatarWelcome } from "@/assets/avatarInfo";
 import WorkSession from "@/app/WorkSession";
 
-// CountdownOverlay component: shows a white circle with black text
 function CountdownOverlay({ onFinish }) {
   const [count, setCount] = useState(3);
 
@@ -44,10 +43,11 @@ export default function SetupSession() {
   const [isLoading, setIsLoading] = useState(true);
   const [chosenBg, chooseBg] = useState("bedroom");
 
-  // Flow stages: "intro", "workTopic", "timeInput", "startSession", "countdown", "timer"
+  // Flow stages: 
+  // "intro", "workTopic", "timeInput", "startSession", "countdown", "timer", "sessionEnded"
   const [sessionStage, setSessionStage] = useState("intro");
   const [workTopic, setWorkTopic] = useState("");
-  const [sessionDuration, setSessionDuration] = useState(0); // in seconds
+  const [sessionDuration, setSessionDuration] = useState(0);
 
   const navigation = useNavigation();
 
@@ -87,6 +87,7 @@ export default function SetupSession() {
       <StatusBar style="dark" />
       <Image source={getBgImage(chosenBg)} style={styles.backgroundImg} />
 
+      {/* 1) Intro Stage */}
       {sessionStage === "intro" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
@@ -103,6 +104,7 @@ export default function SetupSession() {
         </>
       )}
 
+      {/* 2) Work Topic Stage */}
       {sessionStage === "workTopic" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
@@ -120,6 +122,7 @@ export default function SetupSession() {
         </>
       )}
 
+      {/* 3) Time Input Stage */}
       {sessionStage === "timeInput" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
@@ -140,6 +143,7 @@ export default function SetupSession() {
         </>
       )}
 
+      {/* 4) Confirmation Screen (startSession) */}
       {sessionStage === "startSession" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
@@ -148,14 +152,12 @@ export default function SetupSession() {
             text={"Sounds good! I'll start on my assignment too."}
           />
 
-          {/* User's text bubble above the bottom sheet */}
           <View style={styles.userTextBubble}>
             <Text style={styles.timeText}>
               {Math.floor(sessionDuration / 60)} minutes!
             </Text>
           </View>
 
-          {/* Bottom sheet confirmation */}
           <View style={styles.bottomSheet}>
             <TouchableOpacity
               onPress={() => setSessionStage("timeInput")}
@@ -181,16 +183,37 @@ export default function SetupSession() {
         </>
       )}
 
+      {/* 5) Countdown Stage */}
       {sessionStage === "countdown" && (
-        <CountdownOverlay onFinish={() => setSessionStage("timer")} />
+        <CountdownOverlay
+          onFinish={() => setSessionStage("timer")}
+        />
       )}
 
+      {/* 6) Timer Stage */}
       {sessionStage === "timer" && (
         <WorkSession
           sessionDuration={sessionDuration}
-          onQuit={() => setSessionStage("timeInput")}
           avatarName={avatarName}
+          onSessionEnd={() => setSessionStage("sessionEnded")}
         />
+      )}
+
+      {/* 7) Session Ended Stage */}
+      {sessionStage === "sessionEnded" && (
+        <>
+          <AvatarAnimation avatarName={avatarName} />
+          <TextBubble
+            moreStyle={styles.textBubble}
+            text={"Thanks for the session! Let’s study again soon."}
+          />
+          <Button
+            style={[styles.button, { bottom: 150 }]}
+            clickable={true}
+            text="Done"
+            onPress={() => setSessionStage("intro")}
+          />
+        </>
       )}
     </View>
   );
@@ -238,7 +261,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: 300, // approximate keyboard height
+    height: 300,
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
