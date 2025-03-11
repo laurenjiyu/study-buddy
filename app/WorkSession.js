@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, TouchableOpacity, Animated } from "react-native
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import WorkingAvatar from "@/components/WorkingAvatar";
 import TextBubble from "@/components/TextBubble";
+import { getCompletion } from "./OpenAI";
 
 export default function WorkSession({ sessionDuration, avatarName, onSessionEnd }) {
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -13,10 +14,6 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
 
   const [showMotivation, setShowMotivation] = useState(false);
   const [motivationText, setMotivationText] = useState("");
-
-  const getMotivation = () => {
-    return "Keep going, you're doing great!";
-  };
 
   // -------------------- TIMER LOGIC --------------------
   useEffect(() => {
@@ -68,11 +65,16 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
     setShowEndModal(true);
   };
 
-  const handleAvatarPress = () => {
-    const message = getMotivation();
-    setMotivationText(message);
-    setShowMotivation(true);
-    setTimeout(() => setShowMotivation(false), 3000);
+  const handleAvatarPress = async () => {
+    try {
+      setShowMotivation(false);
+      const message = await getCompletion("provide a brief sentence of motivation for the user. the user selected a positive, supportive character persona.");
+      setMotivationText(message);
+      setShowMotivation(true);
+      setTimeout(() => setShowMotivation(false), 8000);
+    } catch (error) {
+      console.error("Error fetching motivation:", error);
+    }
   };
 
   const formatTime = (totalSeconds) => {
@@ -227,14 +229,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   motivationBubble: {
     position: "absolute",
     top: 250,
     alignSelf: "center",
     zIndex: 2,
   },
-
   modalOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.4)",
