@@ -15,7 +15,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 export default function ChatSection({
   visible,
   onClose,
-  placeholder = "Type your reply...",
+  placeholder = "Type your task for this session...",
   keyboardType = "default",
 }) {
   const inputRef = useRef(null);

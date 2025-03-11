@@ -1,14 +1,44 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Animated } from "react-native";
+import { Image, Text, View, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import WorkingAvatar from "@/components/WorkingAvatar";
 import TextBubble from "@/components/TextBubble";
 import { getCompletion } from "./OpenAI";
+import { workingImages } from "@/assets/imgPaths";
+
+function CountdownOverlay({ onFinish }) {
+  const [count, setCount] = useState(3);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (count <= 0) {
+      onFinish();
+    }
+  }, [count, onFinish]);
+
+  return (
+    <View style={styles.countdownOverlay}>
+      <View style={styles.countdownCircle}>
+        <Text style={styles.countdownNumber}>{count > 0 ? count : 0}</Text>
+      </View>
+    </View>
+  );
+}
 
 export default function WorkSession({ sessionDuration, avatarName, onSessionEnd }) {
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerPaused, setTimerPaused] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
+  const [showPauseModal, setShowPauseModal] = useState(false);
+  const [showCountdown, setShowCountdown] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(true);
+
   const timerRef = useRef(null);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
@@ -47,12 +77,19 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
       timerRef.current = null;
     }
     setTimerPaused(true);
+    setShowPauseModal(true);
+    setShowAnimation(false);
   };
 
-  const handleResume = () => {
-    if (!timerRef.current) {
-      setTimerPaused(false);
-    }
+  const handlePauseModalResume = () => {
+    setShowPauseModal(false);
+    setShowCountdown(true);
+    setShowAnimation(true);
+  };
+
+  const handleCountdownFinish = () => {
+    setShowCountdown(false);
+    setTimerPaused(false);
   };
 
   const handleQuit = () => {
@@ -61,7 +98,8 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
   };
 
   const handleShowEndModal = () => {
-    handlePause();
+    setShowAnimation(false);
+    setTimerPaused(true);
     setShowEndModal(true);
   };
 
@@ -86,9 +124,17 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
 
   return (
     <>
-      <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8}>
+    {showAnimation ? (
+        <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8}>
         <WorkingAvatar avatarName={avatarName} />
       </TouchableOpacity>
+    ) : (
+        <Image
+              source={workingImages[`${avatarName}1`]}
+              style={styles.avatarImg}
+            />
+    )}
+      
 
       {showMotivation && (
         <TextBubble
@@ -130,7 +176,10 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
           <TouchableOpacity style={styles.controlButton}>
             <FontAwesome6 name="forward-fast" size={20} color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.controlButton} onPress={timerPaused ? handleResume : handlePause}>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={timerPaused ? handlePauseModalResume : handlePause}
+          >
             <FontAwesome6 name={timerPaused ? "play" : "pause"} size={20} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.controlButton} onPress={handleShowEndModal}>
@@ -142,22 +191,38 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <Text style={styles.modalTitle}>Ending the Session?</Text>
-              
               <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
                 <Text style={styles.quitButtonText}>Quit</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={styles.keepGoingButton}
                 onPress={() => {
                   setShowEndModal(false);
-                  handleResume();
+                  handlePauseModalResume();
                 }}
               >
                 <Text style={styles.keepGoingButtonText}>No, keep going</Text>
               </TouchableOpacity>
             </View>
           </View>
+        )}
+
+        {showPauseModal && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Paused</Text>
+              <Text style={styles.modalSubtitle}>
+                Ok, but don’t take too long! Come back soon!
+              </Text>
+              <TouchableOpacity style={styles.resumeButton} onPress={handlePauseModalResume}>
+                <Text style={styles.resumeButtonText}>Resume</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {showCountdown && (
+          <CountdownOverlay onFinish={handleCountdownFinish} />
         )}
       </View>
     </>
@@ -251,7 +316,23 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    color: "#555",
     marginBottom: 20,
+  },
+  resumeButton: {
+    backgroundColor: "#D9D9D9",
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+  },
+  resumeButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
   },
   quitButton: {
     backgroundColor: "#D9D9D9",
@@ -273,5 +354,31 @@ const styles = StyleSheet.create({
   keepGoingButtonText: {
     fontSize: 16,
     fontWeight: "bold",
+  },
+  countdownOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 3,
+  },
+  countdownCircle: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  countdownNumber: {
+    fontSize: 80,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  avatarImg: {
+    height: 400,
+    width: 400,
+    position: "absolute",
+    marginTop: "75%",
   },
 });

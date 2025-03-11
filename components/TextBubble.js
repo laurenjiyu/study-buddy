@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   },
   triangle: {
     position: "absolute",
-    bottom: -20,
+    bottom: -17,
     left: "50%",
     marginLeft: -15,
     width: 0,

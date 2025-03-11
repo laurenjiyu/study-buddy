@@ -7,13 +7,12 @@ import Button from "@/components/Button";
 import TextBubble from "@/components/TextBubble";
 import ChatSection from "@/components/ChatSection";
 import AvatarAnimation from "@/components/AvatarAnimation";
+import CountdownOverlay from "@/components/CountdownOverlay"
 import { bgImages } from "@/assets/imgPaths";
-import { avatarWelcome } from "@/assets/avatarInfo";
 import WorkSession from "@/app/WorkSession";
 import { getCompletion } from "./OpenAI";
 
-// New component to fetch and display API-based text
-function APIBasedTextBubble({ prompt, moreStyle }) {
+function AITextBubble({ prompt, moreStyle }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -32,31 +31,6 @@ function APIBasedTextBubble({ prompt, moreStyle }) {
   );
 }
 
-function CountdownOverlay({ onFinish }) {
-  const [count, setCount] = useState(3);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCount((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          onFinish();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [onFinish]);
-
-  return (
-    <View style={styles.countdownOverlay}>
-      <View style={styles.countdownCircle}>
-        <Text style={styles.countdownNumber}>{count}</Text>
-      </View>
-    </View>
-  );
-}
 
 export default function SetupSession() {
   const [avatarName, setAvatarName] = useState("Loading...");
@@ -112,9 +86,9 @@ export default function SetupSession() {
       {sessionStage === "intro" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
-          <TextBubble
+          <AITextBubble
+            prompt={`Persona: ${avatarName}. Welcome the user and exclaim that you'll start working soon.'`}
             moreStyle={styles.textBubble}
-            text={avatarWelcome[avatarName] || "Hello there!"}
           />
           <Button
             style={styles.button}
@@ -129,7 +103,7 @@ export default function SetupSession() {
       {sessionStage === "workTopic" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
-          <APIBasedTextBubble
+          <AITextBubble
             prompt={`Persona: ${avatarName}. Ask the user what they'd like to work on today. For example, Positive Percy may say 'It's so good to see you! What are we working on today?'`}
             moreStyle={styles.textBubble}
           />
@@ -147,7 +121,7 @@ export default function SetupSession() {
       {sessionStage === "timeInput" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
-          <APIBasedTextBubble
+          <AITextBubble
             prompt={`Persona: ${avatarName}. To mirror the concept of body doubling, act like you are working on a similar task as the user. Then, ask how long they'd like to work for. User task: ${workTopic}`}
             moreStyle={styles.textBubble}
           />
@@ -168,7 +142,7 @@ export default function SetupSession() {
       {sessionStage === "startSession" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
-          <APIBasedTextBubble
+          <AITextBubble
             prompt={`Persona: ${avatarName}. Tell the user that you are both getting started on your work.`}
             moreStyle={styles.textBubble}
           />
@@ -220,7 +194,7 @@ export default function SetupSession() {
       {sessionStage === "sessionEnded" && (
         <>
           <AvatarAnimation avatarName={avatarName} />
-          <APIBasedTextBubble
+          <AITextBubble
             prompt={`Persona: ${avatarName}. You have just finished a work session. Congratulate the user.`}
             moreStyle={styles.textBubble}
           />
@@ -316,24 +290,5 @@ const styles = StyleSheet.create({
   startButtonText: {
     fontSize: 18,
     fontWeight: "bold",
-  },
-  countdownOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  countdownCircle: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  countdownNumber: {
-    fontSize: 80,
-    fontWeight: "bold",
-    color: "#000",
   },
 });
