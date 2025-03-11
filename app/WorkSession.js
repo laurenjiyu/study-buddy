@@ -3,56 +3,38 @@ import { Image, Text, View, StyleSheet, TouchableOpacity, Animated } from "react
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import WorkingAvatar from "@/components/WorkingAvatar";
 import TextBubble from "@/components/TextBubble";
+import CountdownOverlay from "@/components/CountdownOverlay";
 import { getCompletion } from "./OpenAI";
 import { workingImages } from "@/assets/imgPaths";
 
-function CountdownOverlay({ onFinish }) {
-  const [count, setCount] = useState(3);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCount((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (count <= 0) {
-      onFinish();
-    }
-  }, [count, onFinish]);
-
-  return (
-    <View style={styles.countdownOverlay}>
-      <View style={styles.countdownCircle}>
-        <Text style={styles.countdownNumber}>{count > 0 ? count : 0}</Text>
-      </View>
-    </View>
-  );
-}
-
 export default function WorkSession({ sessionDuration, avatarName, onSessionEnd }) {
-  const [timerSeconds, setTimerSeconds] = useState(0);
+  // Tracks how many seconds of work have been completed
+  const [workingSeconds, setWorkingSeconds] = useState(0);
+  // Tracks total seconds spent on breaks
+  const [breakSeconds, setBreakSeconds] = useState(0);
+  // Used to calculate how long a pause lasts
+  const [pauseStartTime, setPauseStartTime] = useState(null);
+
   const [timerPaused, setTimerPaused] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
   const [showAnimation, setShowAnimation] = useState(true);
 
-  const timerRef = useRef(null);
-  const progressAnim = useRef(new Animated.Value(0)).current;
-
   const [showMotivation, setShowMotivation] = useState(false);
   const [motivationText, setMotivationText] = useState("");
+
+  const timerRef = useRef(null);
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   // -------------------- TIMER LOGIC --------------------
   useEffect(() => {
     if (!timerPaused) {
       timerRef.current = setInterval(() => {
-        setTimerSeconds((prev) => {
+        setWorkingSeconds((prev) => {
           if (prev >= sessionDuration) {
             clearInterval(timerRef.current);
-            onSessionEnd();
+            onSessionEnd({ workingSeconds: prev, breakSeconds });
             return sessionDuration;
           }
           return prev + 1;
@@ -60,15 +42,15 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
       }, 1000);
     }
     return () => clearInterval(timerRef.current);
-  }, [timerPaused, sessionDuration]);
+  }, [timerPaused, sessionDuration, onSessionEnd, breakSeconds]);
 
   useEffect(() => {
     Animated.timing(progressAnim, {
-      toValue: timerSeconds / sessionDuration,
+      toValue: workingSeconds / sessionDuration,
       duration: 1000,
       useNativeDriver: false,
     }).start();
-  }, [timerSeconds, sessionDuration]);
+  }, [workingSeconds, sessionDuration]);
 
   // -------------------- HANDLERS --------------------
   const handlePause = () => {
@@ -79,12 +61,18 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
     setTimerPaused(true);
     setShowPauseModal(true);
     setShowAnimation(false);
+    setPauseStartTime(Date.now());
   };
 
   const handlePauseModalResume = () => {
     setShowPauseModal(false);
     setShowCountdown(true);
     setShowAnimation(true);
+    if (pauseStartTime) {
+      const pausedFor = Math.floor((Date.now() - pauseStartTime) / 1000);
+      setBreakSeconds((prev) => prev + pausedFor);
+      setPauseStartTime(null);
+    }
   };
 
   const handleCountdownFinish = () => {
@@ -94,7 +82,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
 
   const handleQuit = () => {
     clearInterval(timerRef.current);
-    onSessionEnd();
+    onSessionEnd({ workingSeconds, breakSeconds });
   };
 
   const handleShowEndModal = () => {
@@ -106,7 +94,9 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
   const handleAvatarPress = async () => {
     try {
       setShowMotivation(false);
-      const message = await getCompletion("provide a brief sentence of motivation for the user. the user selected a positive, supportive character persona.");
+      const message = await getCompletion(
+        "provide a brief sentence of motivation for the user. the user selected a positive, supportive character persona."
+      );
       setMotivationText(message);
       setShowMotivation(true);
       setTimeout(() => setShowMotivation(false), 8000);
@@ -119,43 +109,41 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(seconds).padStart(2, "0")}`;
   };
 
   return (
     <>
-    {showAnimation ? (
+      {showAnimation ? (
         <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8}>
-        <WorkingAvatar avatarName={avatarName} />
-      </TouchableOpacity>
-    ) : (
-        <Image
-              source={workingImages[`${avatarName}1`]}
-              style={styles.avatarImg}
-            />
-    )}
-      
+          <WorkingAvatar avatarName={avatarName} />
+        </TouchableOpacity>
+      ) : (
+        <Image source={workingImages[`${avatarName}1`]} style={styles.avatarImg} />
+      )}
 
       {showMotivation && (
-        <TextBubble
-          moreStyle={styles.motivationBubble}
-          text={motivationText}
-        />
+        <TextBubble moreStyle={styles.motivationBubble} text={motivationText} />
       )}
 
       <View style={styles.container}>
+        {/* Display time left (sessionDuration - workingSeconds) */}
         <View style={styles.timerContainer}>
           <Text style={styles.timerText}>
-            {formatTime(sessionDuration - timerSeconds)}
+            {formatTime(sessionDuration - workingSeconds)}
           </Text>
         </View>
 
+        {/* Progress bar & info */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressTitle}>
             Working - {Math.floor(sessionDuration / 60)} min
           </Text>
           <Text style={styles.progressSubtitle}>
-            {Math.floor((sessionDuration - timerSeconds) / 60)} min remaining
+            {Math.floor((sessionDuration - workingSeconds) / 60)} min remaining
           </Text>
           <View style={styles.progressBackground}>
             <Animated.View
@@ -172,6 +160,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
           </View>
         </View>
 
+        {/* Controls */}
         <View style={styles.controls}>
           <TouchableOpacity style={styles.controlButton}>
             <FontAwesome6 name="forward-fast" size={20} color="black" />
@@ -180,33 +169,19 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
             style={styles.controlButton}
             onPress={timerPaused ? handlePauseModalResume : handlePause}
           >
-            <FontAwesome6 name={timerPaused ? "play" : "pause"} size={20} color="black" />
+            <FontAwesome6
+              name={timerPaused ? "play" : "pause"}
+              size={20}
+              color="black"
+            />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.controlButton} onPress={handleShowEndModal}>
+          {/* For ending session early, just call handleQuit */}
+          <TouchableOpacity style={styles.controlButton} onPress={handleQuit}>
             <FontAwesome6 name="xmark" size={20} color="black" />
           </TouchableOpacity>
         </View>
 
-        {showEndModal && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>Ending the Session?</Text>
-              <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
-                <Text style={styles.quitButtonText}>Quit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.keepGoingButton}
-                onPress={() => {
-                  setShowEndModal(false);
-                  handlePauseModalResume();
-                }}
-              >
-                <Text style={styles.keepGoingButtonText}>No, keep going</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
+        {/* Paused Modal */}
         {showPauseModal && (
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
@@ -221,9 +196,8 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
           </View>
         )}
 
-        {showCountdown && (
-          <CountdownOverlay onFinish={handleCountdownFinish} />
-        )}
+        {/* Countdown overlay shown after pausing, before resuming */}
+        {showCountdown && <CountdownOverlay onFinish={handleCountdownFinish} />}
       </View>
     </>
   );
@@ -331,27 +305,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   resumeButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  quitButton: {
-    backgroundColor: "#D9D9D9",
-    paddingVertical: 10,
-    paddingHorizontal: 25,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  quitButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  keepGoingButton: {
-    backgroundColor: "#B5F2EA",
-    paddingVertical: 10,
-    paddingHorizontal: 25,
-    borderRadius: 8,
-  },
-  keepGoingButtonText: {
     fontSize: 16,
     fontWeight: "bold",
   },
