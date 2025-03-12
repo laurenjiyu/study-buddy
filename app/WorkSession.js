@@ -3,7 +3,6 @@ import { Image, Text, View, StyleSheet, TouchableOpacity, Animated, Modal } from
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import WorkingAvatar from "@/components/WorkingAvatar";
 import TextBubble from "@/components/TextBubble";
-import CountdownOverlay from "@/components/CountdownOverlay";
 import { getCompletion } from "./OpenAI";
 import { workingImages } from "@/assets/imgPaths";
 import BreakCountdownModal from "@/components/BreakCountdownModal";
@@ -23,7 +22,6 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
     // UI state for modals and animations.
     const [showEndModal, setShowEndModal] = useState(false);
     const [showPauseModal, setShowPauseModal] = useState(false);
-    const [showCountdown, setShowCountdown] = useState(false);
     const [showBreakModal, setShowBreakModal] = useState(false);
     const [showAnimation, setShowAnimation] = useState(true);
     const [showMotivation, setShowMotivation] = useState(false);
@@ -31,6 +29,9 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
 
     const timerRef = useRef(null);
     const progressAnim = useRef(new Animated.Value(0)).current;
+
+    const [lastMotivationIndex, setLastMotivationIndex] = useState(0);
+
 
     // modeStartRef holds the timestamp when the current period began.
     const modeStartRef = useRef(Date.now());
@@ -75,6 +76,26 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         }).start();
     }, [accumulatedWorking, currentElapsed, sessionDuration, curMode]);
 
+    useEffect(() => {
+        if (curMode === "working") {
+          // Total working seconds is the banked working time plus the current elapsed seconds.
+          const totalWorking = accumulatedWorking + currentElapsed;
+          // Calculate the current block (each block is 5 minutes = 300 seconds).
+          const currentIndex = Math.floor(totalWorking / 300);
+          // Only trigger if we have advanced into a new block.
+          if (currentIndex > lastMotivationIndex) {
+            setLastMotivationIndex(currentIndex);
+            getCompletion(`Persona: ${avatarName}. Provide a brief motivational message for the user.`)
+              .then(message => {
+                setMotivationText(message);
+                setShowMotivation(true);
+                setTimeout(() => setShowMotivation(false), 30000);
+              })
+              .catch(err => console.error("Error fetching motivation:", err));
+          }
+        }
+      }, [accumulatedWorking, currentElapsed, curMode, lastMotivationIndex, avatarName]);
+
     // When the user presses pause:
     //  - If in working mode, bank the working time and switch to break.
     //  - Record the pause start so that paused time is later added as break seconds.
@@ -86,6 +107,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             setCurMode("break");
         }
         setTimerPaused(true);
+        setShowMotivation(false);
         setShowPauseModal(true);
         setShowAnimation(false);
         setPauseStartTime(Date.now());
@@ -97,27 +119,35 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         setShowBreakModal(true);
         setShowEndModal(false);
         setShowPauseModal(false);
+        setShowMotivation(false);
     };
 
-    // When resuming, add the paused time to break seconds.
-    const handlePauseModalResume = () => {
+    const handlePauseModalResume = async () => {
         setShowPauseModal(false);
         setShowEndModal(false);
-        setShowCountdown(true);
+        setShowBreakModal(false);
         setShowAnimation(true);
         setCurMode("working");
         setTimerPaused(false);
         if (pauseStartTime) {
-            const pausedFor = Math.floor((Date.now() - pauseStartTime) / 1000);
-            setAccumulatedBreak((prev) => prev + pausedFor);
-            setPauseStartTime(null);
+          const pausedFor = Math.floor((Date.now() - pauseStartTime) / 1000);
+          setAccumulatedBreak((prev) => prev + pausedFor);
+          setPauseStartTime(null);
         }
-    };
+        // Fetch and display an AI message when resuming.
+        try {
+          const message = await getCompletion(
+            `Persona: ${avatarName}. Provide a motivational message for resuming work.`
+          );
+          setMotivationText(message);
+          setShowMotivation(true);
+          setTimeout(() => setShowMotivation(false), 8000);
+        } catch (error) {
+          console.error("Error fetching AI message:", error);
+        }
+      };
+      
 
-    const handleCountdownFinish = () => {
-        setShowCountdown(false);
-        setTimerPaused(false);
-    };
 
     // Quit early, combining any in-progress elapsed time.
     const handleQuit = () => {
@@ -126,12 +156,6 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             workingSeconds: accumulatedWorking + (curMode === "working" ? currentElapsed : 0),
             breakSeconds: accumulatedBreak + (curMode === "break" ? currentElapsed : 0),
         });
-    };
-
-    const handleShowEndModal = () => {
-        setShowAnimation(false);
-        setTimerPaused(true);
-        setShowEndModal(true);
     };
 
     const handleAvatarPress = async () => {
@@ -261,19 +285,12 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
                 {showBreakModal && (
                     <BreakCountdownModal
                         visible={showBreakModal}
-                        onCountdownFinish={() => {
-                            setShowBreakModal(false);
-                            setCurMode("working");
-                            setTimerPaused(false);
-                            modeStartRef.current = Date.now();
-                        }}
+                        onCountdownFinish={handlePauseModalResume}
                         onTick={(sec) => {
                             setAccumulatedBreak(prev => prev + sec);
                         }}
                     />
                 )}
-
-                {/* {showCountdown && <CountdownOverlay onFinish={handleCountdownFinish} />} */}
             </View>
         </>
     );
