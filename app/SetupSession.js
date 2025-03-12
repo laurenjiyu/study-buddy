@@ -1,35 +1,15 @@
 import { useState, useEffect } from "react";
-import { Text, Image, StyleSheet, View, TouchableOpacity } from "react-native";
+import { Text, Image, StyleSheet, View, TouchableOpacity, SafeAreaView } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Button from "@/components/Button";
-import TextBubble from "@/components/TextBubble";
-import ChatSection from "@/components/ChatSection";
+import AITextBubble from "@/components/AITextBubble";
 import AvatarAnimation from "@/components/AvatarAnimation";
-import CountdownOverlay from "@/components/CountdownOverlay"
-import { bgImages } from "@/assets/imgPaths";
+import CountdownOverlay from "@/components/CountdownOverlay";
+import { bgImages, workingImages } from "@/assets/imgPaths";
 import WorkSession from "@/app/WorkSession";
-import { getCompletion } from "./OpenAI";
-
-function AITextBubble({ prompt, moreStyle }) {
-  const [text, setText] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchText() {
-      setLoading(true);
-      const response = await getCompletion(prompt);
-      setText(response);
-      setLoading(false);
-    }
-    fetchText();
-  }, [prompt]);
-
-  return (
-    <TextBubble moreStyle={moreStyle} text={loading ? "..." : text} />
-  );
-}
+import ChatSection from "@/components/ChatSection";
+import Intro from "@/components/SessionSetup/Intro";
 
 
 export default function SetupSession() {
@@ -38,11 +18,14 @@ export default function SetupSession() {
   const [isLoading, setIsLoading] = useState(true);
   const [chosenBg, chooseBg] = useState("bedroom");
 
-  // Flow stages: 
-  // "intro", "workTopic", "timeInput", "startSession", "countdown", "timer", "sessionEnded"
+  // Flow stages: "intro", "workTopic", "timeInput", "startSession", "countdown", "timer", "sessionEnded", "statistics"
   const [sessionStage, setSessionStage] = useState("intro");
   const [workTopic, setWorkTopic] = useState("");
   const [sessionDuration, setSessionDuration] = useState(0);
+
+  const [totalWorkingSeconds, setTotalWorkingSeconds] = useState(0);
+  const [totalBreakSeconds, setTotalBreakSeconds] = useState(0);
+  const [mode, setMode] = useState("working");
 
   const navigation = useNavigation();
 
@@ -58,7 +41,6 @@ export default function SetupSession() {
       if (!storedAvatar) {
         console.error("No avatar found in AsyncStorage.");
         setAvatarName("Unknown");
-        setAvatarDesc("No description available.");
         return;
       }
       setAvatarName(storedAvatar);
@@ -77,6 +59,12 @@ export default function SetupSession() {
     fetchAvatar();
   }, []);
 
+  const handleSessionEnd = ({ workingSeconds, breakSeconds }) => {
+    setTotalWorkingSeconds(workingSeconds);
+    setTotalBreakSeconds(breakSeconds);
+    setSessionStage("sessionEnded");
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -84,19 +72,9 @@ export default function SetupSession() {
 
       {/* 1) Intro Stage */}
       {sessionStage === "intro" && (
-        <>
-          <AvatarAnimation avatarName={avatarName} />
-          <AITextBubble
-            prompt={`Persona: ${avatarName}. Welcome the user and exclaim that you'll start working soon.'`}
-            moreStyle={styles.textBubble}
-          />
-          <Button
-            style={styles.button}
-            clickable={true}
-            text="Next"
-            onPress={() => setSessionStage("workTopic")}
-          />
-        </>
+        <SafeAreaView style={styles.container}>
+          <Intro avatarName={avatarName} setSessionStage={setSessionStage} />
+        </SafeAreaView>
       )}
 
       {/* 2) Work Topic Stage */}
@@ -104,7 +82,7 @@ export default function SetupSession() {
         <>
           <AvatarAnimation avatarName={avatarName} />
           <AITextBubble
-            prompt={`Persona: ${avatarName}. Ask the user what they'd like to work on today. For example, Positive Percy may say 'It's so good to see you! What are we working on today?'`}
+            prompt={`Persona: ${avatarName}. Ask the user what they'd like to work on today.`}
             moreStyle={styles.textBubble}
           />
           <ChatSection
@@ -122,7 +100,7 @@ export default function SetupSession() {
         <>
           <AvatarAnimation avatarName={avatarName} />
           <AITextBubble
-            prompt={`Persona: ${avatarName}. To mirror the concept of body doubling, act like you are working on a similar task as the user. Then, ask how long they'd like to work for. User task: ${workTopic}`}
+            prompt={`Persona: ${avatarName}. Ask how long they'd like to work for. User task: ${workTopic}`}
             moreStyle={styles.textBubble}
           />
           <ChatSection
@@ -186,25 +164,61 @@ export default function SetupSession() {
         <WorkSession
           sessionDuration={sessionDuration}
           avatarName={avatarName}
-          onSessionEnd={() => setSessionStage("sessionEnded")}
+          onSessionEnd={handleSessionEnd}
+          mode={mode}
         />
       )}
 
-      {/* 7) Session Ended Stage */}
+      {/* 7) Session Ended Stage: Modal for break/continue/end */}
       {sessionStage === "sessionEnded" && (
         <>
-          <AvatarAnimation avatarName={avatarName} />
+          <Image source={workingImages[`${avatarName}1`]} style={styles.avatarImg} />
           <AITextBubble
-            prompt={`Persona: ${avatarName}. You have just finished a work session. Congratulate the user.`}
+            prompt={`Persona: ${avatarName}. The user just ended their work session. Close the session.`}
             moreStyle={styles.textBubble}
           />
-          <Button
-            style={[styles.button, { bottom: 150 }]}
-            clickable={true}
-            text="Done"
-            onPress={() => setSessionStage("intro")}
-          />
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.stackedButton} onPress={() => setSessionStage("statistics")}>
+              <Text style={styles.buttonText}>View summary</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.stackedButton, { backgroundColor: "#87ADA9" }]}
+              onPress={() => setSessionStage("timeInput")}
+            >
+              <Text style={styles.buttonText}>Begin another session</Text>
+            </TouchableOpacity>
+          </View>
         </>
+
+      )}
+
+
+      {/* 8) Statistics Stage */}
+      {sessionStage === "statistics" && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.statsTitle}>Session Summary</Text>
+            <Text style={styles.statsText}>
+              {Math.floor(totalWorkingSeconds / 60)} minutes working
+            </Text>
+            <Text style={styles.statsText}>
+              {Math.floor(totalBreakSeconds / 60)} minutes on break
+            </Text>
+            <TouchableOpacity
+              style={[styles.stackedButton, { backgroundColor: "#87ADA9", marginTop: 35 }]}
+              onPress={() => setSessionStage("timeInput")}
+            >
+              <Text style={styles.statsButtonText}>Start Another Session</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.stackedButton}
+              onPress={() => setSessionStage("intro")}
+            >
+              <Text style={styles.statsButtonText}>Go Home</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
       )}
     </View>
   );
@@ -290,5 +304,114 @@ const styles = StyleSheet.create({
   startButtonText: {
     fontSize: 18,
     fontWeight: "bold",
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 4,
+  },
+  modalContainer: {
+    width: "75%",
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    color: "#555",
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: "#D9D9D9",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginVertical: 5,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "black",
+  },
+  statsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  statsTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  statsText: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  statsButton: {
+    backgroundColor: "#D9D9D9",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    marginTop: 20,
+  },
+  statsButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  countdownOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 3,
+  },
+  countdownCircle: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  countdownNumber: {
+    fontSize: 80,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  avatarImg: {
+    height: 400,
+    width: 400,
+    position: "absolute",
+    marginTop: "75%",
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  stackedButton: {
+    marginVertical: 5,
+    width: '80%',
+    paddingVertical: 15,
+    borderRadius: 8,
+    backgroundColor: "#D9D9D9",
+    alignItems: 'center',
+    borderRadius: 40,
+  },
+  buttonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: "black",
   },
 });
