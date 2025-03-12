@@ -1,11 +1,6 @@
 import OpenAI from "openai";
 
-const key = process.env.OPENAI_API_KEY;
-
-if (!key) {
-  console.error("Error: Missing OpenAI API Key!");
-  process.exit(1);
-}
+const key = "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";
 
 const openai = new OpenAI({apiKey: key});
 

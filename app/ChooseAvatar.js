@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Text,
   Alert,
@@ -14,10 +14,12 @@ import AvatarChoice from "@/components/AvatarChoice";
 import Button from "@/components/Button";
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usePushNotifications } from "@/app/hooks/Notifications"; // Adjust path if needed
 
 import Theme from "@/assets/theme";
 
 export default function Login() {
+  const { expoPushToken, notification } = usePushNotifications();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +27,13 @@ export default function Login() {
   const navigation = useNavigation();
   
   const updateAvatar = (chosen) => setAvatar(chosen);
+
+  useEffect(() => {
+    if (expoPushToken) {
+      console.log("Expo Push Token:", expoPushToken.data);
+    }
+  }, [expoPushToken]);
+
 
   const confirmAvatar = async () => {
     try {
@@ -50,6 +59,7 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
+      {expoPushToken && <Text>Token: {expoPushToken.data}</Text>}
       <StatusBar style="dark" />
       <View style={styles.circle}/>
       <View style={styles.splash}>
