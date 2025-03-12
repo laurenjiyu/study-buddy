@@ -92,7 +92,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd 
     try {
       setShowMotivation(false);
       const message = await getCompletion(
-        `Persona: ${avatarName}. Provide a brief sentence of motivation for the user.`
+        `Persona: ${avatarName}. Provide a brief sentence of motivation/nudging for the user based on the persona.`
       );
       setMotivationText(message);
       setShowMotivation(true);
