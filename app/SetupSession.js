@@ -4,24 +4,28 @@ import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Button from "@/components/Button";
-import ChatSection from "@/components/ChatSection";
+import AITextBubble from "@/components/AITextBubble";
 import AvatarAnimation from "@/components/AvatarAnimation";
 import CountdownOverlay from "@/components/CountdownOverlay";
-import { bgImages } from "@/assets/imgPaths";
+import { bgImages, workingImages } from "@/assets/imgPaths";
 import WorkSession from "@/app/WorkSession";
-import AITextBubble from "@/components/AITextBubble";
+import ChatSection from "@/components/ChatSection";
+
 
 export default function SetupSession() {
   const [avatarName, setAvatarName] = useState("Loading...");
+  const [avatarDesc, setAvatarDesc] = useState("Loading...");
+  const [isLoading, setIsLoading] = useState(true);
   const [chosenBg, chooseBg] = useState("bedroom");
 
-  // Flow stages: 
-  // "intro", "workTopic", "timeInput", "startSession", "countdown", "timer", "sessionEnded", "statistics"
+  // Flow stages: "intro", "workTopic", "timeInput", "startSession", "countdown", "timer", "sessionEnded", "statistics"
   const [sessionStage, setSessionStage] = useState("intro");
   const [workTopic, setWorkTopic] = useState("");
   const [sessionDuration, setSessionDuration] = useState(0);
+
   const [totalWorkingSeconds, setTotalWorkingSeconds] = useState(0);
   const [totalBreakSeconds, setTotalBreakSeconds] = useState(0);
+  const [mode, setMode] = useState("working");
 
   const navigation = useNavigation();
 
@@ -37,7 +41,6 @@ export default function SetupSession() {
       if (!storedAvatar) {
         console.error("No avatar found in AsyncStorage.");
         setAvatarName("Unknown");
-        setAvatarDesc("No description available.");
         return;
       }
       setAvatarName(storedAvatar);
@@ -172,69 +175,53 @@ export default function SetupSession() {
           sessionDuration={sessionDuration}
           avatarName={avatarName}
           onSessionEnd={handleSessionEnd}
+          mode={mode}
         />
       )}
 
-      {/* 7) Session Ended Stage: Show end modal with options */}
+      {/* 7) Session Ended Stage: Modal for break/continue/end */}
       {sessionStage === "sessionEnded" && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>End session?</Text>
-            <Text style={styles.modalSubtitle}>
-              Would you like to take a 5 minute break, continue working, or end the session?
-            </Text>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => {
-                setSessionDuration(5 * 60);
-                setSessionStage("timer");
-              }}
-            >
-              <Text style={styles.modalButtonText}>5 Minute Break</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => {
-                setSessionStage("timer");
-              }}
-            >
-              <Text style={styles.modalButtonText}>Continue Working</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => {
-                setSessionStage("statistics");
-              }}
-            >
-              <Text style={styles.modalButtonText}>End Session</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <>
+
+          <Image source={workingImages[`${avatarName}1`]} style={styles.avatarImg} />
+          <AITextBubble
+            prompt={`Persona: ${avatarName}. The user just ended their work session. Close the session.`}
+            moreStyle={styles.textBubble}
+          />
+          <Button
+            style={styles.button}
+            clickable={true}
+            text="View summary"
+            onPress={() => setSessionStage("statistics")}
+          />
+        </>
+      
       )}
+
 
       {/* 8) Statistics Stage */}
       {sessionStage === "statistics" && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-          <Text style={styles.statsTitle}>Session Summary</Text>
-          <Text style={styles.statsText}>
-            {Math.floor(totalWorkingSeconds / 60)} minutes working
-          </Text>
-          <Text style={styles.statsText}>
-            {Math.floor(totalBreakSeconds / 60)} minutes on break
-          </Text>
-          <TouchableOpacity
-            style={styles.statsButton}
-            onPress={() => setSessionStage("intro")}
-          >
-            <Text style={styles.statsButtonText}>Go home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.statsButton, { marginTop: 10 }]}
-            onPress={() => setSessionStage("timeInput")}
-          >
-            <Text style={styles.statsButtonText}>Start another session</Text>
-          </TouchableOpacity>
+            <Text style={styles.statsTitle}>Session Summary</Text>
+            <Text style={styles.statsText}>
+              {Math.floor(totalWorkingSeconds / 60)} minutes working
+            </Text>
+            <Text style={styles.statsText}>
+              {Math.floor(totalBreakSeconds / 60)} minutes on break
+            </Text>
+            <TouchableOpacity
+              style={styles.statsButton}
+              onPress={() => setSessionStage("intro")}
+            >
+              <Text style={styles.statsButtonText}>Go Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.statsButton, { marginTop: 10 }]}
+              onPress={() => setSessionStage("timeInput")}
+            >
+              <Text style={styles.statsButtonText}>Start Another Session</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -364,11 +351,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 20,
-    width: 200,
-    height: 200,
   },
   statsTitle: {
     fontSize: 24,
@@ -410,4 +392,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#000",
   },
+  avatarImg: {
+    height: 400,
+    width: 400,
+    position: "absolute",
+    marginTop: "75%",
+},
 });
