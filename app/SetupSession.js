@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import { Text, Image, StyleSheet, View, TouchableOpacity } from "react-native";
+import { Text, Image, StyleSheet, View, TouchableOpacity, SafeAreaView } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Button from "@/components/Button";
 import AITextBubble from "@/components/AITextBubble";
 import AvatarAnimation from "@/components/AvatarAnimation";
 import CountdownOverlay from "@/components/CountdownOverlay";
 import { bgImages, workingImages } from "@/assets/imgPaths";
 import WorkSession from "@/app/WorkSession";
 import ChatSection from "@/components/ChatSection";
+import Intro from "@/components/SessionSetup/Intro";
 
 
 export default function SetupSession() {
@@ -72,19 +72,9 @@ export default function SetupSession() {
 
       {/* 1) Intro Stage */}
       {sessionStage === "intro" && (
-        <>
-          <AvatarAnimation avatarName={avatarName} />
-          <AITextBubble
-            prompt={`Persona: ${avatarName}. Welcome the user and tell them you'll start working soon.`}
-            moreStyle={styles.textBubble}
-          />
-          <Button
-            style={styles.button}
-            clickable={true}
-            text="Next"
-            onPress={() => setSessionStage("workTopic")}
-          />
-        </>
+        <SafeAreaView style={styles.container}>
+          <Intro avatarName={avatarName} setSessionStage={setSessionStage} />
+        </SafeAreaView>
       )}
 
       {/* 2) Work Topic Stage */}
@@ -182,20 +172,24 @@ export default function SetupSession() {
       {/* 7) Session Ended Stage: Modal for break/continue/end */}
       {sessionStage === "sessionEnded" && (
         <>
-
           <Image source={workingImages[`${avatarName}1`]} style={styles.avatarImg} />
           <AITextBubble
             prompt={`Persona: ${avatarName}. The user just ended their work session. Close the session.`}
             moreStyle={styles.textBubble}
           />
-          <Button
-            style={styles.button}
-            clickable={true}
-            text="View summary"
-            onPress={() => setSessionStage("statistics")}
-          />
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.stackedButton} onPress={() => setSessionStage("statistics")}>
+              <Text style={styles.buttonText}>View summary</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.stackedButton, { backgroundColor: "#87ADA9" }]}
+              onPress={() => setSessionStage("timeInput")}
+            >
+              <Text style={styles.buttonText}>Begin another session</Text>
+            </TouchableOpacity>
+          </View>
         </>
-      
+
       )}
 
 
@@ -211,17 +205,18 @@ export default function SetupSession() {
               {Math.floor(totalBreakSeconds / 60)} minutes on break
             </Text>
             <TouchableOpacity
-              style={styles.statsButton}
-              onPress={() => setSessionStage("intro")}
-            >
-              <Text style={styles.statsButtonText}>Go Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.statsButton, { marginTop: 10 }]}
+              style={[styles.stackedButton, { backgroundColor: "#87ADA9", marginTop: 35 }]}
               onPress={() => setSessionStage("timeInput")}
             >
               <Text style={styles.statsButtonText}>Start Another Session</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.stackedButton}
+              onPress={() => setSessionStage("intro")}
+            >
+              <Text style={styles.statsButtonText}>Go Home</Text>
+            </TouchableOpacity>
+
           </View>
         </View>
       )}
@@ -397,5 +392,26 @@ const styles = StyleSheet.create({
     width: 400,
     position: "absolute",
     marginTop: "75%",
-},
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  stackedButton: {
+    marginVertical: 5,
+    width: '80%',
+    paddingVertical: 15,
+    borderRadius: 8,
+    backgroundColor: "#D9D9D9",
+    alignItems: 'center',
+    borderRadius: 40,
+  },
+  buttonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: "black",
+  },
 });

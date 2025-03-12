@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Audio } from "expo-av";
 
-const BREAK_DURATION = 5 * 60; // 300 seconds
+const BREAK_DURATION = 5 * 60;
 
 export default function BreakCountdownModal({ visible, onCountdownFinish, onTick }) {
   const [countdown, setCountdown] = useState(BREAK_DURATION);
@@ -18,29 +19,56 @@ export default function BreakCountdownModal({ visible, onCountdownFinish, onTick
     onCountdownFinishRef.current = onCountdownFinish;
   }, [onCountdownFinish]);
 
+  // Debug: log visible and countdown every time they change.
+  useEffect(() => {
+    console.log("BreakCountdownModal - visible:", visible, "countdown:", countdown);
+  }, [visible, countdown]);
+
   // Set up the interval to decrement countdown when the modal is visible.
   useEffect(() => {
     if (!visible) return;
     setCountdown(BREAK_DURATION);
     const interval = setInterval(() => {
-      setCountdown(prevCount => prevCount - 1);
+      setCountdown(prevCount => (prevCount > 0 ? prevCount - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
   }, [visible]);
 
-  // On every countdown change, call onTick and trigger onCountdownFinish when needed.
+  // On every countdown change, call onTick (but don't automatically resume when 0)
   useEffect(() => {
     if (!visible) return;
     if (countdown > 0) {
-      if (onTickRef.current) {
-        onTickRef.current(1);
-      }
-    } else {
-      if (onCountdownFinishRef.current) {
-        onCountdownFinishRef.current();
-      }
+      onTickRef.current && onTickRef.current(1);
     }
   }, [countdown, visible]);
+
+  // NEW: When countdown is 0 and the modal is open, repeatedly play the sound.
+  // This effect will run every time [visible, countdown] changes.
+  useEffect(() => {
+    let soundInterval;
+    if (visible && countdown === 0) {
+      (async () => {
+        try {
+          await Audio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: false,
+            shouldDuckAndroid: false,
+          });
+          const { sound } = await Audio.Sound.createAsync(
+            require("@/assets/sounds/break_end.m4a")
+          );
+          await sound.playAsync();
+          // Unload after a short delay.
+          setTimeout(() => sound.unloadAsync(), 2000);
+        } catch (error) {
+          console.error("Error playing sound:", error);
+        }
+      })();
+    }
+    return () => {
+      if (soundInterval) clearInterval(soundInterval);
+    };
+  }, [visible, countdown]);
 
   const formatTime = (totalSeconds) => {
     const minutes = Math.floor(totalSeconds / 60);
@@ -55,7 +83,7 @@ export default function BreakCountdownModal({ visible, onCountdownFinish, onTick
           <Text style={styles.modalTitle}>Break Time</Text>
           <Text style={styles.countdownText}>{formatTime(countdown)}</Text>
           <TouchableOpacity style={styles.endButton} onPress={onCountdownFinish}>
-            <Text style={styles.endButtonText}>End Break</Text>
+            <Text style={styles.endButtonText}>Resume Session</Text>
           </TouchableOpacity>
         </View>
       </View>

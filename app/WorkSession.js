@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Image, Text, View, StyleSheet, TouchableOpacity, Animated, Modal } from "react-native";
+import { Image, Text, View, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import WorkingAvatar from "@/components/WorkingAvatar";
 import TextBubble from "@/components/TextBubble";
@@ -12,7 +12,7 @@ import BreakCountdownModal from "@/components/BreakCountdownModal";
 export default function WorkSession({ sessionDuration, avatarName, onSessionEnd, mode }) {
     const [accumulatedWorking, setAccumulatedWorking] = useState(0);
     const [accumulatedBreak, setAccumulatedBreak] = useState(0);
-    
+
     // currentElapsed tracks seconds elapsed since the current period began.
     const [currentElapsed, setCurrentElapsed] = useState(0);
 
@@ -36,26 +36,29 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
     // modeStartRef holds the timestamp when the current period began.
     const modeStartRef = useRef(Date.now());
     const [pauseStartTime, setPauseStartTime] = useState(null);
-
+    const enableAudio = async () => {
+        await Audio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: false,
+            shouldDuckAndroid: false,
+        })
+    };
     const playWorkEndSound = async () => {
         try {
-            const { sound } = await Audio.Sound.createAsync(
-                require("@/assets/sounds/work_end.m4a")
-            );
-            await sound.playAsync();
+            await enableAudio();
+            for (let i = 0; i < 3; i++) {
+                const _sound = new Audio.Sound();
+                await _sound.loadAsync(require("@/assets/sounds/work_end.m4a"), { shouldPlay: true });
+                await _sound.setPositionAsync(0);
+                await _sound.playAsync();
+
+                // Wait for 1 second before playing the next sound
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+
+                await _sound.unloadAsync();
+            }
         } catch (error) {
             console.error("Error playing work end sound:", error);
-        }
-    };
-
-    const playBreakEndSound = async () => {
-        try {
-            const { sound } = await Audio.Sound.createAsync(
-                require("@/assets/sounds/break_end.m4a")
-            );
-            await sound.playAsync();
-        } catch (error) {
-            console.error("Error playing break end sound:", error);
         }
     };
 
@@ -72,11 +75,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
                 clearInterval(timerRef.current);
                 playWorkEndSound();
                 onSessionEnd({ workingSeconds: sessionDuration, breakSeconds: accumulatedBreak });
-            } else if (curMode === "break" && (accumulatedBreak + elapsed) >= sessionDuration) {
-                clearInterval(timerRef.current);
-                playBreakEndSound();
-                onSessionEnd({ workingSeconds: accumulatedWorking, breakSeconds: sessionDuration });
-            }
+            };
         }, 1000);
         return () => clearInterval(timerRef.current);
     }, [timerPaused, curMode, accumulatedWorking, accumulatedBreak, sessionDuration, onSessionEnd]);
@@ -303,12 +302,13 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
                 {showBreakModal && (
                     <BreakCountdownModal
                         visible={showBreakModal}
-                        onCountdownFinish={handlePauseModalResume}
+                        onCountdownFinish={handlePauseModalResume}  // Resume only when user clicks the button.
                         onTick={(sec) => {
                             setAccumulatedBreak(prev => prev + sec);
                         }}
                     />
                 )}
+
             </View>
         </>
     );
@@ -423,8 +423,10 @@ const styles = StyleSheet.create({
         backgroundColor: "#D9D9D9",
         paddingVertical: 10,
         paddingHorizontal: 20,
-        borderRadius: 8,
+        borderRadius: 50,
         marginVertical: 5,
+        width: "80%",
+        alignItems: "center"
     },
     modalButtonText: {
         fontSize: 16,
