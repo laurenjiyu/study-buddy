@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import TextBubble from "@/components/TextBubble";
-import { getCompletion } from "./OpenAI";
+import { getCompletion } from "@/app/OpenAI";
 
 export default function AITextBubble({ prompt, moreStyle }) {
   const [text, setText] = useState("");
