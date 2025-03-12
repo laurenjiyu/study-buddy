@@ -87,6 +87,7 @@ export default function SetupSession() {
           />
           <ChatSection
             visible={sessionStage === "workTopic"}
+            suggestions={['Homework', 'Coding', 'Chores']}
             onClose={(message) => {
               setWorkTopic(message);
               setSessionStage("timeInput");
@@ -107,6 +108,7 @@ export default function SetupSession() {
             visible={sessionStage === "timeInput"}
             placeholder="Enter duration in minutes..."
             keyboardType="numeric"
+            suggestions={['15','45','60']}
             onClose={(message) => {
               const durationInSeconds = parseInt(message, 10) * 60;
               setSessionDuration(durationInSeconds);
