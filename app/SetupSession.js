@@ -100,7 +100,7 @@ export default function SetupSession() {
         <>
           <AvatarAnimation avatarName={avatarName} />
           <AITextBubble
-            prompt={`Persona: ${avatarName}. Ask how long they'd like to work for. User task: ${workTopic}`}
+            prompt={`Persona: ${avatarName}. Ask how long they'd like to work on their task for (if the task is appropriate, otherwise don't reference it). User task: ${workTopic}`}
             moreStyle={styles.textBubble}
           />
           <ChatSection
@@ -140,7 +140,7 @@ export default function SetupSession() {
               This is a {Math.floor(sessionDuration / 60)} minute work session.
             </Text>
             <Text style={styles.subText}>
-              Feel free to incorporate as many breaks as you need
+              Feel free to incorporate as many breaks as you need, and tap {avatarName} for motivation at any point!
             </Text>
             <TouchableOpacity
               onPress={() => setSessionStage("countdown")}
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     color: "black",
   },
   sessionText: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 5,
@@ -300,10 +300,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",     
   },
   startButtonText: {
     fontSize: 18,
     fontWeight: "bold",
+    textAlign: "center",
   },
   modalOverlay: {
     ...StyleSheet.absoluteFillObject,
