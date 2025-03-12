@@ -5,17 +5,17 @@ import WorkingAvatar from "@/components/WorkingAvatar";
 import TextBubble from "@/components/TextBubble";
 import { getCompletion } from "./OpenAI";
 import { workingImages } from "@/assets/imgPaths";
+import { Audio } from "expo-av";
 import BreakCountdownModal from "@/components/BreakCountdownModal";
 
 
 export default function WorkSession({ sessionDuration, avatarName, onSessionEnd, mode }) {
-    // Track accumulated time from completed cycles.
     const [accumulatedWorking, setAccumulatedWorking] = useState(0);
     const [accumulatedBreak, setAccumulatedBreak] = useState(0);
+    
     // currentElapsed tracks seconds elapsed since the current period began.
     const [currentElapsed, setCurrentElapsed] = useState(0);
 
-    // current mode ("working" or "break") and pause state
     const [curMode, setCurMode] = useState(mode);
     const [timerPaused, setTimerPaused] = useState(false);
 
@@ -35,8 +35,29 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
 
     // modeStartRef holds the timestamp when the current period began.
     const modeStartRef = useRef(Date.now());
-    // pauseStartTime records when the pause began.
     const [pauseStartTime, setPauseStartTime] = useState(null);
+
+    const playWorkEndSound = async () => {
+        try {
+            const { sound } = await Audio.Sound.createAsync(
+                require("@/assets/sounds/work_end.m4a")
+            );
+            await sound.playAsync();
+        } catch (error) {
+            console.error("Error playing work end sound:", error);
+        }
+    };
+
+    const playBreakEndSound = async () => {
+        try {
+            const { sound } = await Audio.Sound.createAsync(
+                require("@/assets/sounds/break_end.m4a")
+            );
+            await sound.playAsync();
+        } catch (error) {
+            console.error("Error playing break end sound:", error);
+        }
+    };
 
     // Timer effect updates currentElapsed every 1000ms when not paused.
     useEffect(() => {
@@ -46,17 +67,14 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             const elapsed = Math.floor((Date.now() - modeStartRef.current) / 1000);
             setCurrentElapsed(elapsed);
 
-            // Log current effective times (for debugging)
-            console.log(
-                `Mode: ${curMode} | Working: ${accumulatedWorking}, Break: ${accumulatedBreak}`
-            );
-
             // End the session if the working time reaches sessionDuration.
             if (curMode === "working" && (accumulatedWorking + elapsed) >= sessionDuration) {
                 clearInterval(timerRef.current);
+                playWorkEndSound();
                 onSessionEnd({ workingSeconds: sessionDuration, breakSeconds: accumulatedBreak });
             } else if (curMode === "break" && (accumulatedBreak + elapsed) >= sessionDuration) {
                 clearInterval(timerRef.current);
+                playBreakEndSound();
                 onSessionEnd({ workingSeconds: accumulatedWorking, breakSeconds: sessionDuration });
             }
         }, 1000);
@@ -78,23 +96,23 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
 
     useEffect(() => {
         if (curMode === "working") {
-          // Total working seconds is the banked working time plus the current elapsed seconds.
-          const totalWorking = accumulatedWorking + currentElapsed;
-          // Calculate the current block (each block is 5 minutes = 300 seconds).
-          const currentIndex = Math.floor(totalWorking / 300);
-          // Only trigger if we have advanced into a new block.
-          if (currentIndex > lastMotivationIndex) {
-            setLastMotivationIndex(currentIndex);
-            getCompletion(`Persona: ${avatarName}. Provide a brief motivational message for the user.`)
-              .then(message => {
-                setMotivationText(message);
-                setShowMotivation(true);
-                setTimeout(() => setShowMotivation(false), 30000);
-              })
-              .catch(err => console.error("Error fetching motivation:", err));
-          }
+            // Total working seconds is the banked working time plus the current elapsed seconds.
+            const totalWorking = accumulatedWorking + currentElapsed;
+            // Calculate the current block (each block is 5 minutes = 300 seconds).
+            const currentIndex = Math.floor(totalWorking / 300);
+            // Only trigger if we have advanced into a new block.
+            if (currentIndex > lastMotivationIndex) {
+                setLastMotivationIndex(currentIndex);
+                getCompletion(`Persona: ${avatarName}. Provide a brief motivational message for the user.`)
+                    .then(message => {
+                        setMotivationText(message);
+                        setShowMotivation(true);
+                        setTimeout(() => setShowMotivation(false), 30000);
+                    })
+                    .catch(err => console.error("Error fetching motivation:", err));
+            }
         }
-      }, [accumulatedWorking, currentElapsed, curMode, lastMotivationIndex, avatarName]);
+    }, [accumulatedWorking, currentElapsed, curMode, lastMotivationIndex, avatarName]);
 
     // When the user presses pause:
     //  - If in working mode, bank the working time and switch to break.
@@ -130,23 +148,23 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         setCurMode("working");
         setTimerPaused(false);
         if (pauseStartTime) {
-          const pausedFor = Math.floor((Date.now() - pauseStartTime) / 1000);
-          setAccumulatedBreak((prev) => prev + pausedFor);
-          setPauseStartTime(null);
+            const pausedFor = Math.floor((Date.now() - pauseStartTime) / 1000);
+            setAccumulatedBreak((prev) => prev + pausedFor);
+            setPauseStartTime(null);
         }
         // Fetch and display an AI message when resuming.
         try {
-          const message = await getCompletion(
-            `Persona: ${avatarName}. Provide a motivational message for resuming work.`
-          );
-          setMotivationText(message);
-          setShowMotivation(true);
-          setTimeout(() => setShowMotivation(false), 8000);
+            const message = await getCompletion(
+                `Persona: ${avatarName}. Provide a motivational message for resuming work.`
+            );
+            setMotivationText(message);
+            setShowMotivation(true);
+            setTimeout(() => setShowMotivation(false), 8000);
         } catch (error) {
-          console.error("Error fetching AI message:", error);
+            console.error("Error fetching AI message:", error);
         }
-      };
-      
+    };
+
 
 
     // Quit early, combining any in-progress elapsed time.
