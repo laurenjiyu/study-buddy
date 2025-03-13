@@ -102,6 +102,8 @@ const styles = StyleSheet.create({
   img: {
     alignSelf: "center",
     marginBottom: 30,
+    width: 200,
+    height: 265
   },
   circle: {
     position: "absolute",
