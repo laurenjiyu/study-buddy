@@ -276,7 +276,8 @@ export default function SetupSession() {
               setSessionStage("takingBreak"); // Move to break state
 
               // Schedule a notification for when the break ends
-              scheduleBreakNotification(durationInSeconds);
+              scheduleBreakNotification(durationInSeconds, 
+                 (`Persona: ${avatarName}. Write a short push notification (max 60 chars) to urge to start working on ${workTopic} again. End it with ' - ${avatarName}'`));
             }}
           />
         </>

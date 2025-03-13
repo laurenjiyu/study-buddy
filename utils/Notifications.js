@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications";
+import { getCompletion } from "@/app/OpenAI";
 
 // Configure how notifications behave when received
 Notifications.setNotificationHandler({
@@ -18,15 +19,21 @@ export async function requestNotificationPermissions() {
 }
 
 // Schedule a notification to alert the user when the break is over
-export async function scheduleBreakNotification(durationInSeconds) {
-  console.log("break duration: ", durationInSeconds);
+export async function scheduleBreakNotification(durationInSeconds, workPrompt) {
+  // Get custom notification based on the persona
+  const customAvatarNotif = await getCompletion(workPrompt);
+
+  console.log("notif: ", customAvatarNotif);
+
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "Break Over!",
-      body: "Time to get back to work! I'm itching to finish up my homework.",
+      body: customAvatarNotif,
     },
-    trigger: { date: new Date(Date.now() + durationInSeconds * 1000) },
-  });
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: durationInSeconds,
+    },  });
 }
 
 // Cancel all scheduled notifications (if break is canceled or adjusted)

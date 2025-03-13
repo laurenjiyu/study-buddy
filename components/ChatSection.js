@@ -87,7 +87,7 @@ export default function ChatSection({
                     <TouchableOpacity key={index} style={styles.singleChoice} onPress={() =>  setInputText(option)}>
                       <Text>{option}</Text>
                     </TouchableOpacity>
-                  ))}{" "}
+                  ))}
                 </View>
               </View>
 

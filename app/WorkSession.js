@@ -434,6 +434,7 @@ const styles = StyleSheet.create({
         height: 400,
         width: 400,
         position: "absolute",
+        marginLeft: 1,
         marginTop: "75%",
     },
     breakModalOverlay: {
