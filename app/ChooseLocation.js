@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { Text, Alert, Image, StyleSheet, View, TouchableOpacity } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage"; 
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 import Button from "@/components/Button";
 import Theme from "@/assets/theme";
 import { avatarImages, bgImages } from "@/assets/imgPaths";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; // back icon
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6"; // Import FontAwesome for back icon
 
 export default function ChooseLocation() {
   const [avatarName, setAvatarName] = useState("Loading...");
@@ -191,11 +191,11 @@ const styles = StyleSheet.create({
   avatarImg: {
     height: 270,
     resizeMode: "contain",
-    position: "absolute", 
+    position: "absolute", // Places avatar over background
   },
   backgroundImg: {
-    width: "90%", 
-    height: "100%",
+    width: "90%", // Adjust width for better fit
+    height: "100%", // Covers the allocated space
     resizeMode: "cover",
     borderRadius: 20,
   },
