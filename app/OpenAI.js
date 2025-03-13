@@ -1,16 +1,10 @@
 import OpenAI from "openai";
 
-const key = "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";
+
+const key = ""
 
 const openai = new OpenAI({apiKey: key});
 
-/* Helpter function to turn AI's output into number */
-const processAnswerIndex = (text) => {
-  text = text.replace(/\D/g, '');
-  return parseInt(text, 10);
-}
-
-/* Generates the avatar's responses for their text bubble */
 export async function getCompletion(prompt) {
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -29,19 +23,4 @@ export async function getCompletion(prompt) {
     store: true,
   });
   return completion.choices[0].message.content;
-}
-
-/* Processes a user's answers and returns the interpretation */
-export async function interpretAnswer(question, answer, options) {
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: `You are an AI assistant for a productivity app designed to help individuals with ADHD stay focused and motivated during 
-        work sessions. You will be given the question asked to the user, the answer the user gave us, and a zero-indexed list of options to interpret it. Answer with the only the
-        numerical index of the option that best corresponds with the user's reply, eg. '0' or '2'`},
-      { role: "user", content: "Question: " + question + ", User answer: " + answer + ", Options: " + options },
-    ],
-    store: true,
-  });
-  return processAnswerIndex(completion.choices[0].message.content);
 }
