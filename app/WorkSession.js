@@ -158,7 +158,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             );
             setMotivationText(message);
             setShowMotivation(true);
-            setTimeout(() => setShowMotivation(false), 8000);
+            setTimeout(() => setShowMotivation(false), 12000);
         } catch (error) {
             console.error("Error fetching AI message:", error);
         }
@@ -183,7 +183,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             );
             setMotivationText(message);
             setShowMotivation(true);
-            setTimeout(() => setShowMotivation(false), 8000);
+            setTimeout(() => setShowMotivation(false), 12000);
         } catch (error) {
             console.error("Error fetching motivation:", error);
         }
