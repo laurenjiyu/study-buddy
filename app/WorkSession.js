@@ -247,9 +247,6 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
 
                 {/* Controls */}
                 <View style={styles.controls}>
-                    <TouchableOpacity style={styles.controlButton}>
-                        <FontAwesome6 name="forward-fast" size={20} color="black" />
-                    </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.controlButton}
                         onPress={timerPaused ? handlePauseModalResume : () => { handlePause(); setShowPauseModal(true); }}
@@ -368,7 +365,7 @@ const styles = StyleSheet.create({
         bottom: 30,
         flexDirection: "row",
         justifyContent: "space-around",
-        width: "60%",
+        width: "30%",
     },
     controlButton: {
         width: 50,
