@@ -1,21 +1,27 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View, LogBox } from 'react-native';
-import { useFonts } from 'expo-font'; // Ensure this import is here
-
+import { StyleSheet, Text, View, LogBox } from "react-native";
+import { useFonts } from "expo-font";
+import * as Notifications from "expo-notifications";
 import { Redirect } from "expo-router";
 
 import ChooseAvatar from "@/app/ChooseAvatar";
 import ChooseLocation from "@/app/ChooseLocation";
 import SetupSession from "@/app/SetupSession";
 
-
 import db from "@/database/db";
 import Loading from "@/app/Loading";
-
 
 // Hides all console warnings
 LogBox.ignoreAllLogs(true);
 
+// Configure notification display behavior for foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false, // optional: do not set app icon badge
+  }),
+});
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -23,8 +29,18 @@ export default function App() {
 
   // Load fonts before rendering
   const [fontsLoaded] = useFonts({
-    'Nunito': require('../assets/fonts/Nunito-VariableFont_wght.ttf'),
+    Nunito: require("../assets/fonts/Nunito-VariableFont_wght.ttf"),
   });
+
+  useEffect(() => {
+    async function requestPermissions() {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== "granted") {
+        await Notifications.requestPermissionsAsync();
+      }
+    }
+    requestPermissions(); // Call the async function inside useEffect
+  }, []);
 
   useEffect(() => {
     setIsLoading(true);
@@ -45,17 +61,17 @@ export default function App() {
   }, []);
 
   if (!fontsLoaded) {
-    return <Loading />; 
+    return <Loading />;
   }
 
   // Override default Text styles so all fonts are Nunito
-  const defaultTextStyle = { fontFamily: 'Nunito' };
+  const defaultTextStyle = { fontFamily: "Nunito" };
 
   const originalTextRender = Text.render;
   Text.render = function render(props, ref) {
     return originalTextRender.call(this, {
       ...props,
-      style: [defaultTextStyle, props.style], 
+      style: [defaultTextStyle, props.style],
       ref,
     });
   };
@@ -65,6 +81,13 @@ export default function App() {
   } else if (isLoading) {
     return <Loading />;
   } else {
-    return <ChooseAvatar />;
+    return <SetupSession />;
   }
 }
+
+// Apply default font style safely using StyleSheet
+const styles = StyleSheet.create({
+  text: {
+    fontFamily: "Nunito",
+  },
+});

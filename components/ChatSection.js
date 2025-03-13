@@ -65,7 +65,7 @@ export default function ChatSection({
             style={[
               styles.modalContent,
               keyboardType === "default" && isKeyboardVisible
-                ? { minHeight: "50%" }
+                ? { minHeight: "30%" }
                 : {},
             ]}
           >
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    padding: 25,
+    padding: 20,
     elevation: 5,
     minHeight: "35%",
   },
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     overflow: "hidden",
     backgroundColor: "white",
-    minHeight: 50,
+    minHeight: 5,
   },
   input: {
     fontSize: 18,
@@ -146,17 +146,17 @@ const styles = StyleSheet.create({
   inputLeft: {
     flexDirection: "column",
     flex: 1,
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
   },
   choicesRow: {
     flexDirection: "row",
     marginVertical: 10,
-    gap: 10,
+    gap: 5,
   },
   singleChoice: {
     backgroundColor: Theme.colors.lightGray,
     padding: 2,
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
     borderRadius: 15,
   }
 });

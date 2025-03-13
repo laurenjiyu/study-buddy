@@ -4,7 +4,7 @@ import { Audio } from "expo-av";
 
 const BREAK_DURATION = 5 * 60;
 
-export default function BreakCountdownModal({ visible, onCountdownFinish, onTick }) {
+export default function BreakCountdownModal({ visible, duration, onCountdownFinish, onTick }) {
   const [countdown, setCountdown] = useState(BREAK_DURATION);
 
   // Store callbacks in refs to avoid adding them to effect dependencies.
@@ -27,7 +27,7 @@ export default function BreakCountdownModal({ visible, onCountdownFinish, onTick
   // Set up the interval to decrement countdown when the modal is visible.
   useEffect(() => {
     if (!visible) return;
-    setCountdown(BREAK_DURATION);
+    setCountdown(duration || BREAK_DURATION);
     const interval = setInterval(() => {
       setCountdown(prevCount => (prevCount > 0 ? prevCount - 1 : 0));
     }, 1000);
