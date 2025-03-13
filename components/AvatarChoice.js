@@ -92,15 +92,17 @@ const styles = StyleSheet.create({
     maxHeight: 180,
     resizeMode: "contain",
     top: -20,
-    left: -20,
+    left: -170,
     zIndex: 1,
+    pointerEvents: "none", // Allows clicks to pass through the image
   },
   imgRight: {
     position: "absolute",
     maxHeight: 180,
     resizeMode: "contain",
     top: -20,
-    right: -20,
+    right: -180,
     zIndex: 1,
+    pointerEvents: "none", // Allows clicks to pass through the image
   },
 });

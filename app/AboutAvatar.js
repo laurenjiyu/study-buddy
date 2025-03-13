@@ -102,6 +102,9 @@ const styles = StyleSheet.create({
   img: {
     alignSelf: "center",
     marginBottom: 30,
+    width: 350, // Set a smaller width
+    height: 350, // Maintain aspect ratio
+    resizeMode: "contain", // Ensures the entire image is visible within the bounds
   },
   circle: {
     position: "absolute",
