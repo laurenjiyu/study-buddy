@@ -431,12 +431,11 @@ const styles = StyleSheet.create({
         color: "black",
     },
     avatarImg: {
-        height: 400,
+        height: 700,
         width: 400,
         position: "absolute",
-        marginLeft: 1,
-        marginTop: "75%",
-    },
+        marginTop: "85%",
+      },
     breakModalOverlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.4)",

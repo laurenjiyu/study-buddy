@@ -24,9 +24,9 @@ export default function WorkingAvatar({ avatarName }) {
 
 const styles = StyleSheet.create({
   avatarImg: {
-    height: 400,
+    height: 700,
     width: 400,
     position: "absolute",
-    marginTop: "75%",
+    marginTop: "85%",
   },
 });

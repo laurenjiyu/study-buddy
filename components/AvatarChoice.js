@@ -22,41 +22,51 @@ const avatarImages = {
   "Gentle Joey": require("@/assets/avatar/gentle-joey.png"),
 };
 
-export default function AvatarChoice({avatar, alignment, chooseAvatar, chosen}) {
-
+export default function AvatarChoice({ avatar, alignment, chooseAvatar, chosen }) {
   const selectAvatar = () => {
     chooseAvatar(avatar);
-    console.log(avatar)
-  }
+    console.log(avatar);
+  };
 
   return (
     <View style={styles.biggerContainer}>
       {alignment === "left" ? (
         <>
-          <TouchableOpacity style={[styles.grayRectangle, chosen && styles.selected]} onPress={selectAvatar}>
+          <TouchableOpacity 
+            style={[styles.grayRectangle, chosen && styles.selected]} 
+            onPress={selectAvatar}
+            activeOpacity={0.7}
+          >
             <View style={styles.textSectionLeft}>
               <Text style={styles.name}>{avatar}</Text>
               <Text>{avatarDict[avatar]}</Text>
             </View>
           </TouchableOpacity>
-          <Image source={avatarImages[avatar]} style={styles.imgLeft} />
+          <TouchableOpacity onPress={selectAvatar} activeOpacity={0.7}>
+            <Image source={avatarImages[avatar]} style={styles.imgLeft} />
+          </TouchableOpacity>
         </>
       ) : (
         <>
-          <TouchableOpacity style={[styles.grayRectangle, chosen && styles.selected]} onPress={selectAvatar}>
+          <TouchableOpacity 
+            style={[styles.grayRectangle, chosen && styles.selected]} 
+            onPress={selectAvatar}
+            activeOpacity={0.7}
+          >
             <View style={styles.textSectionRight}>
               <Text style={styles.name}>{avatar}</Text>
               <Text>{avatarDict[avatar]}</Text>
             </View>
           </TouchableOpacity>
-          <Image source={avatarImages[avatar]} style={styles.imgRight} />
+          <TouchableOpacity onPress={selectAvatar} activeOpacity={0.7}>
+            <Image source={avatarImages[avatar]} style={styles.imgRight} />
+          </TouchableOpacity>
         </>
       )}
     </View>
   );
-
-
 }
+
 
 const styles = StyleSheet.create({
   name: {
@@ -91,16 +101,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     maxHeight: 180,
     resizeMode: "contain",
-    top: -20,
-    left: -20,
+    top: -180,
+    left: -170,
     zIndex: 1,
   },
   imgRight: {
     position: "absolute",
     maxHeight: 180,
     resizeMode: "contain",
-    top: -20,
-    right: -20,
+    top: -180,
+    right: -180,
     zIndex: 1,
   },
 });
