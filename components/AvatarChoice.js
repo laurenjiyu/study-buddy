@@ -101,16 +101,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     maxHeight: 180,
     resizeMode: "contain",
-    top: -180,
+    top: -20,
     left: -170,
     zIndex: 1,
+    pointerEvents: "none", // Allows clicks to pass through the image
   },
   imgRight: {
     position: "absolute",
     maxHeight: 180,
     resizeMode: "contain",
-    top: -180,
-    right: -180,
+    top: -20,
+    right: -20,
     zIndex: 1,
+    pointerEvents: "none", // Allows clicks to pass through the image
   },
 });

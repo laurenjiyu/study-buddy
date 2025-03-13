@@ -391,10 +391,10 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   avatarImg: {
-    height: 700,
-    width: 400,
-    position: "absolute",
-    marginTop: "65%",
+    height: 800,             // Fixed height
+    width: 400,              // Fixed width
+    position: "absolute",  
+    bottom: -200 
   },
   buttonContainer: {
     position: 'absolute',

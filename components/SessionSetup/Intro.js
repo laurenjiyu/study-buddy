@@ -10,7 +10,7 @@ export default function Intro({ avatarName, setSessionStage }) {
       <View style={styles.avatarContainer}>
         <AnimatedAvatar avatarName={avatarName} />
         <AITextBubble
-          prompt={`Persona: ${avatarName}. Welcome the user and tell them you'll start working soon.`}
+          prompt={`Persona: ${avatarName}. Greet the user and tell them you'll start working soon.`}
           moreStyle={styles.textBubble}
         />
       </View>

@@ -158,7 +158,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             );
             setMotivationText(message);
             setShowMotivation(true);
-            setTimeout(() => setShowMotivation(false), 8000);
+            setTimeout(() => setShowMotivation(false), 12000);
         } catch (error) {
             console.error("Error fetching AI message:", error);
         }
@@ -183,7 +183,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             );
             setMotivationText(message);
             setShowMotivation(true);
-            setTimeout(() => setShowMotivation(false), 8000);
+            setTimeout(() => setShowMotivation(false), 12000);
         } catch (error) {
             console.error("Error fetching motivation:", error);
         }
@@ -434,12 +434,11 @@ const styles = StyleSheet.create({
         color: "black",
     },
     avatarImg: {
-        height: 700,
-        width: 400,
-        position: "absolute",
-        marginTop: "85%",
-    },
-
+        height: 800,             // Fixed height
+        width: 400,              // Fixed width
+        position: "absolute",  
+        bottom: -250 
+      },
     breakModalOverlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.4)",
