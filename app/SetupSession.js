@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Text, Image, StyleSheet, View, TouchableOpacity, SafeAreaView } from "react-native";
+import {
+  Text,
+  Image,
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  SafeAreaView,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,7 +17,12 @@ import { bgImages, workingImages } from "@/assets/imgPaths";
 import WorkSession from "@/app/WorkSession";
 import ChatSection from "@/components/ChatSection";
 import Intro from "@/components/SessionSetup/Intro";
-
+import { interpretAnswer } from "@/app/OpenAI";
+import BreakCountdownModal from "@/components/BreakCountdownModal";
+import {
+  requestNotificationPermissions,
+  scheduleBreakNotification,
+} from "@/utils/Notifications";
 
 export default function SetupSession() {
   const [avatarName, setAvatarName] = useState("Loading...");
@@ -26,10 +38,33 @@ export default function SetupSession() {
   const [totalWorkingSeconds, setTotalWorkingSeconds] = useState(0);
   const [totalBreakSeconds, setTotalBreakSeconds] = useState(0);
   const [mode, setMode] = useState("working");
+  const [isBreakModalVisible, setIsBreakModalVisible] = useState(false);
 
   const navigation = useNavigation();
 
   const getBgImage = (name) => bgImages[name] || bgImages.bedroom;
+
+  // Map index to post-session screen
+  const sessionMapping = {
+    0: "timeInput", // Keep working
+    1: "statistics", // I'm done
+    2: "setBreak", // I need a break
+  };
+
+  const postSessionStage = async (message) => {
+    setIsLoading(true);
+    const postSessionOptions = ["Keep working!", "I'm done", "I need a break"];
+    const question = "What would you like to do next?";
+
+    const choiceIndex = await interpretAnswer(
+      question,
+      message,
+      postSessionOptions
+    );
+
+    // Set the session stage based on AI response
+    setSessionStage(sessionMapping[choiceIndex] || "sessionEnded"); // Default to sessionEnded if invalid
+  };
 
   const fetchAvatar = async () => {
     try {
@@ -87,6 +122,7 @@ export default function SetupSession() {
           />
           <ChatSection
             visible={sessionStage === "workTopic"}
+            suggestions={["Homework", "Coding", "Chores"]}
             onClose={(message) => {
               setWorkTopic(message);
               setSessionStage("timeInput");
@@ -107,6 +143,7 @@ export default function SetupSession() {
             visible={sessionStage === "timeInput"}
             placeholder="Enter duration in minutes..."
             keyboardType="numeric"
+            suggestions={["15", "45", "60"]}
             onClose={(message) => {
               const durationInSeconds = parseInt(message, 10) * 60;
               setSessionDuration(durationInSeconds);
@@ -146,9 +183,7 @@ export default function SetupSession() {
               onPress={() => setSessionStage("countdown")}
               style={styles.startButton}
             >
-              <Text style={styles.startButtonText}>
-                Start the session →
-              </Text>
+              <Text style={styles.startButtonText}>Start the session →</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -172,26 +207,24 @@ export default function SetupSession() {
       {/* 7) Session Ended Stage: Modal for break/continue/end */}
       {sessionStage === "sessionEnded" && (
         <>
-          <Image source={workingImages[`${avatarName}1`]} style={styles.avatarImg} />
+          <Image
+            source={workingImages[`${avatarName}1`]}
+            style={styles.avatarImg}
+          />
           <AITextBubble
-            prompt={`Persona: ${avatarName}. The user just ended their work session. Close the session.`}
+            prompt={`Persona: ${avatarName}. The user just ended their work session for ${workTopic}. Ask them if they want to do another one.`}
             moreStyle={styles.textBubble}
           />
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.stackedButton} onPress={() => setSessionStage("statistics")}>
-              <Text style={styles.buttonText}>View summary</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.stackedButton, { backgroundColor: "#87ADA9" }]}
-              onPress={() => setSessionStage("timeInput")}
-            >
-              <Text style={styles.buttonText}>Begin another session</Text>
-            </TouchableOpacity>
-          </View>
+          <ChatSection
+            visible={sessionStage === "sessionEnded"}
+            placeholder="Enter what you want to do next"
+            suggestions={["Keep working!", "I'm done", "I need a break"]}
+            onClose={(message) => {
+              postSessionStage(message);
+            }}
+          />
         </>
-
       )}
-
 
       {/* 8) Statistics Stage */}
       {sessionStage === "statistics" && (
@@ -205,7 +238,10 @@ export default function SetupSession() {
               {Math.floor(totalBreakSeconds / 60)} minutes on break
             </Text>
             <TouchableOpacity
-              style={[styles.stackedButton, { backgroundColor: "#87ADA9", marginTop: 35 }]}
+              style={[
+                styles.stackedButton,
+                { backgroundColor: "#87ADA9", marginTop: 35 },
+              ]}
               onPress={() => setSessionStage("timeInput")}
             >
               <Text style={styles.statsButtonText}>Start Another Session</Text>
@@ -216,9 +252,48 @@ export default function SetupSession() {
             >
               <Text style={styles.statsButtonText}>Go Home</Text>
             </TouchableOpacity>
-
           </View>
         </View>
+      )}
+
+      {/* 9) Set up Break Stage */}
+      {sessionStage === "setBreak" && (
+        <>
+          <AvatarAnimation avatarName={avatarName} />
+          <AITextBubble
+            prompt={`Persona: ${avatarName}. How long would you like to take a break for?`}
+            moreStyle={styles.textBubble}
+          />
+          <ChatSection
+            visible={sessionStage === "setBreak"}
+            placeholder="Enter duration in minutes..."
+            keyboardType="numeric"
+            suggestions={["5", "10", "15"]}
+            onClose={(message) => {
+              const durationInSeconds = parseInt(message, 10) * 60;
+              setTotalBreakSeconds(durationInSeconds);
+              setIsBreakModalVisible(true);
+              setSessionStage("takingBreak"); // Move to break state
+
+              // Schedule a notification for when the break ends
+              scheduleBreakNotification(durationInSeconds, 
+                 (`Persona: ${avatarName}. Write a short push notification (max 60 chars) to urge to start working on ${workTopic} again. End it with ' - ${avatarName}'`));
+            }}
+          />
+        </>
+      )}
+
+      {/* 10) Taking Break Stage */}
+      {sessionStage === "takingBreak" && (
+        <BreakCountdownModal
+          visible={isBreakModalVisible}
+          onCountdownFinish={() => {
+            setIsBreakModalVisible(false);
+            setSessionStage("workTopic"); // Move back to work session
+          }}
+          duration = {totalBreakSeconds}
+          onTick={() => {}} // Optional: Track elapsed time if needed
+        />
       )}
     </View>
   );
@@ -397,24 +472,24 @@ const styles = StyleSheet.create({
     marginTop: "75%",
   },
   buttonContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 50,
     left: 0,
     right: 0,
-    alignItems: 'center',
+    alignItems: "center",
   },
   stackedButton: {
     marginVertical: 5,
-    width: '80%',
+    width: "80%",
     paddingVertical: 15,
     borderRadius: 8,
     backgroundColor: "#D9D9D9",
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 40,
   },
   buttonText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: "black",
   },
 });
