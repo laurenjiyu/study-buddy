@@ -1,22 +1,24 @@
 import { useState, useEffect } from "react";
 import { Text, View, StyleSheet } from "react-native";
 
-
 export default function CountdownOverlay({ onFinish }) {
   const [count, setCount] = useState(3);
+
   useEffect(() => {
+    if (count <= 0) return;
+
     const interval = setInterval(() => {
-      setCount((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          onFinish();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setCount((prev) => prev - 1);
     }, 1000);
+
     return () => clearInterval(interval);
-  }, [onFinish]);
+  }, [count]);
+
+  useEffect(() => {
+    if (count === 0) {
+      onFinish();
+    }
+  }, [count, onFinish]); 
 
   return (
     <View style={styles.countdownOverlay}>

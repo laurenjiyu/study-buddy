@@ -158,7 +158,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             );
             setMotivationText(message);
             setShowMotivation(true);
-            setTimeout(() => setShowMotivation(false), 8000);
+            setTimeout(() => setShowMotivation(false), 12000);
         } catch (error) {
             console.error("Error fetching AI message:", error);
         }
@@ -183,7 +183,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             );
             setMotivationText(message);
             setShowMotivation(true);
-            setTimeout(() => setShowMotivation(false), 8000);
+            setTimeout(() => setShowMotivation(false), 12000);
         } catch (error) {
             console.error("Error fetching motivation:", error);
         }
@@ -247,9 +247,6 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
 
                 {/* Controls */}
                 <View style={styles.controls}>
-                    <TouchableOpacity style={styles.controlButton}>
-                        <FontAwesome6 name="forward-fast" size={20} color="black" />
-                    </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.controlButton}
                         onPress={timerPaused ? handlePauseModalResume : () => { handlePause(); setShowPauseModal(true); }}
@@ -368,7 +365,7 @@ const styles = StyleSheet.create({
         bottom: 30,
         flexDirection: "row",
         justifyContent: "space-around",
-        width: "60%",
+        width: "30%",
     },
     controlButton: {
         width: 50,
@@ -434,12 +431,11 @@ const styles = StyleSheet.create({
         color: "black",
     },
     avatarImg: {
-        height: 700,
-        width: 400,
-        position: "absolute",
-        marginTop: "85%",
-    },
-
+        height: 800,             // Fixed height
+        width: 400,              // Fixed width
+        position: "absolute",  
+        bottom: -250 
+      },
     breakModalOverlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.4)",

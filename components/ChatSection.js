@@ -9,13 +9,16 @@ import {
   Platform,
   TouchableOpacity,
   Keyboard,
+  Text,
 } from "react-native";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import Theme from "@/assets/theme";
 
 export default function ChatSection({
   visible,
   onClose,
   placeholder = "Type your task for this session...",
+  suggestions = [],
   keyboardType = "default",
 }) {
   const inputRef = useRef(null);
@@ -23,9 +26,13 @@ export default function ChatSection({
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
-    const showListener = Keyboard.addListener("keyboardDidShow", () => setKeyboardVisible(true));
-    const hideListener = Keyboard.addListener("keyboardDidHide", () => setKeyboardVisible(false));
-    
+    const showListener = Keyboard.addListener("keyboardDidShow", () =>
+      setKeyboardVisible(true)
+    );
+    const hideListener = Keyboard.addListener("keyboardDidHide", () =>
+      setKeyboardVisible(false)
+    );
+
     return () => {
       showListener.remove();
       hideListener.remove();
@@ -38,6 +45,10 @@ export default function ChatSection({
       setInputText("");
     }
   };
+
+  const inputSuggestion = (suggestion) => {
+    setInputText(suggestion);
+  }
 
   return (
     <Modal
@@ -53,21 +64,33 @@ export default function ChatSection({
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={[
               styles.modalContent,
-              keyboardType === "default" && isKeyboardVisible ? { minHeight: "50%" } : {}, 
+              keyboardType === "default" && isKeyboardVisible
+                ? { minHeight: "30%" }
+                : {},
             ]}
           >
             <View style={styles.inputWrapper}>
-              <TextInput
-                ref={inputRef}
-                style={styles.input}
-                placeholder={placeholder}
-                autoFocus
-                keyboardType={keyboardType}
-                value={inputText}
-                onChangeText={setInputText}
-                onSubmitEditing={handleSubmit}
-                blurOnSubmit={false}
-              />
+              <View style={styles.inputLeft}>
+                <TextInput
+                  ref={inputRef}
+                  style={styles.input}
+                  placeholder={placeholder}
+                  autoFocus
+                  keyboardType={keyboardType}
+                  value={inputText}
+                  onChangeText={setInputText}
+                  onSubmitEditing={handleSubmit}
+                  blurOnSubmit={false}
+                />
+                <View style={styles.choicesRow}>
+                  {suggestions.map((option, index) => (
+                    <TouchableOpacity key={index} style={styles.singleChoice} onPress={() =>  setInputText(option)}>
+                      <Text>{option}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
               <TouchableOpacity
                 style={[
                   styles.submitButton,
@@ -96,9 +119,9 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    padding: 25,
+    padding: 20,
     elevation: 5,
-    minHeight: "45%",
+    minHeight: "35%",
   },
   inputWrapper: {
     flexDirection: "row",
@@ -106,20 +129,34 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     overflow: "hidden",
     backgroundColor: "white",
+    minHeight: 5,
   },
   input: {
-    flex: 1,
     fontSize: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
     backgroundColor: "transparent",
   },
   submitButton: {
-    width: 35,
-    height: 35,
+    width: 36,
+    height: 36,
     borderRadius: 21,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 5,
   },
+  inputLeft: {
+    flexDirection: "column",
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  choicesRow: {
+    flexDirection: "row",
+    marginVertical: 10,
+    gap: 5,
+  },
+  singleChoice: {
+    backgroundColor: Theme.colors.lightGray,
+    padding: 2,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+  }
 });
