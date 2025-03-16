@@ -22,51 +22,41 @@ const avatarImages = {
   "Gentle Joey": require("@/assets/avatar/gentle-joey.png"),
 };
 
-export default function AvatarChoice({ avatar, alignment, chooseAvatar, chosen }) {
+export default function AvatarChoice({avatar, alignment, chooseAvatar, chosen}) {
+
   const selectAvatar = () => {
     chooseAvatar(avatar);
-    console.log(avatar);
-  };
+    console.log(avatar)
+  }
 
   return (
     <View style={styles.biggerContainer}>
       {alignment === "left" ? (
         <>
-          <TouchableOpacity 
-            style={[styles.grayRectangle, chosen && styles.selected]} 
-            onPress={selectAvatar}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={[styles.grayRectangle, chosen && styles.selected]} onPress={selectAvatar}>
             <View style={styles.textSectionLeft}>
               <Text style={styles.name}>{avatar}</Text>
               <Text>{avatarDict[avatar]}</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity onPress={selectAvatar} activeOpacity={0.7}>
-            <Image source={avatarImages[avatar]} style={styles.imgLeft} />
-          </TouchableOpacity>
+          <Image source={avatarImages[avatar]} style={styles.imgLeft} />
         </>
       ) : (
         <>
-          <TouchableOpacity 
-            style={[styles.grayRectangle, chosen && styles.selected]} 
-            onPress={selectAvatar}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={[styles.grayRectangle, chosen && styles.selected]} onPress={selectAvatar}>
             <View style={styles.textSectionRight}>
               <Text style={styles.name}>{avatar}</Text>
               <Text>{avatarDict[avatar]}</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity onPress={selectAvatar} activeOpacity={0.7}>
-            <Image source={avatarImages[avatar]} style={styles.imgRight} />
-          </TouchableOpacity>
+          <Image source={avatarImages[avatar]} style={styles.imgRight} />
         </>
       )}
     </View>
   );
-}
 
+
+}
 
 const styles = StyleSheet.create({
   name: {
@@ -111,7 +101,7 @@ const styles = StyleSheet.create({
     maxHeight: 180,
     resizeMode: "contain",
     top: -20,
-    right: -20,
+    right: -180,
     zIndex: 1,
     pointerEvents: "none", // Allows clicks to pass through the image
   },

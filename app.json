@@ -11,6 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "notification": {
+      "icon": "./assets/icons/notif.png"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
