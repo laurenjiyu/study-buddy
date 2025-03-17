@@ -68,6 +68,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             playsInSilentModeIOS: true,
             staysActiveInBackground: false,
             shouldDuckAndroid: false,
+            playsInSilentModeIOS: true,  // Ensures audio plays even when silent mode is on
         });
     };
 
@@ -100,6 +101,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
 
     const playMusic = async (track) => {
         try {
+            enableAudio();
             if (soundRef.current) {
                 await soundRef.current.unloadAsync();
             }
@@ -331,7 +333,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
                         <FontAwesome6 name={timerPaused ? "play" : "pause"} size={20} color="black" />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.motivationButton} onPress={handleAvatarPress}>
-                        <Text style={styles.motivationButtonText}>Motivation</Text>
+                    <Text style={styles.motivationButtonText}>{`Nudge ${avatarName.split(" ").slice(1).join(" ")}`}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.controlButton}
