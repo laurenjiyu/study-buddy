@@ -32,7 +32,7 @@ export default function StartPage() {
       </Text>
       <Button
         text="Next"
-        onPress={navigation.navigate("FeedbackQ")}
+        onPress={() => navigation.navigate("FeedbackQ")}
         clickable={true}
       />
     </View>

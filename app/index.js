@@ -34,6 +34,7 @@ const Stack = createStackNavigator();
 
 export default function App() {
   const [session, setSession] = useState(null);
+  const [startScreen, setStart] = useState("StartPage");
   const [isLoading, setIsLoading] = useState(true);
 
   // Load fonts before rendering
@@ -56,6 +57,9 @@ export default function App() {
 
     db.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) {
+        setStart("ChooseSesh");
+      }
       setIsLoading(false);
     });
 
@@ -87,7 +91,11 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        initialRouteName={startScreen}
+        screenOptions={{ headerShown: false }}
+      >
+        {/* Logged-in users */}
         <Stack.Screen name="StartPage" component={StartPage} />
         <Stack.Screen name="ChooseAvatar" component={ChooseAvatar} />
         <Stack.Screen name="FeedbackQ" component={FeedbackQ} />
@@ -96,7 +104,7 @@ export default function App() {
         <Stack.Screen name="ChooseLocation" component={ChooseLocation} />
         <Stack.Screen name="SetupSession" component={SetupSession} />
         <Stack.Screen name="WorkSession" component={WorkSession} />
-        <Stack.Screen name="ChooseSesh" component={ChooseSesh} />        
+        <Stack.Screen name="ChooseSesh" component={ChooseSesh} />
       </Stack.Navigator>
     </NavigationContainer>
   );
