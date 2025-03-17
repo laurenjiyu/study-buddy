@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     },
     motivationBubble: {
         position: "absolute",
-        top: 250,
+        top: 200,
         alignSelf: "center",
         zIndex: 2,
     },
