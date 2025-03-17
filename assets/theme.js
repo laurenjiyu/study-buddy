@@ -3,6 +3,7 @@ export default {
   colors: {
     backgroundPrimary: "#F5F4F1",
     backgroundSecondary: "white",
+    backgroundLightBlue: "#E1FFFA",
 
     // Mostly used for buttons
     lightGray: "#DFE5E4",
