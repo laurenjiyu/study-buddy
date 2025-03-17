@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Image, Text, View, StyleSheet, TouchableOpacity, Animated } from "react-native";
+import {
+    Image,
+    Text,
+    View,
+    StyleSheet,
+    TouchableOpacity,
+    Animated,
+    Modal,
+    FlatList,
+} from "react-native";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import WorkingAvatar from "@/components/WorkingAvatar";
 import TextBubble from "@/components/TextBubble";
@@ -8,18 +17,24 @@ import { workingImages } from "@/assets/imgPaths";
 import { Audio } from "expo-av";
 import BreakCountdownModal from "@/components/BreakCountdownModal";
 
+const musicTracks = [
+    { name: "Cozy", file: require("@/assets/music/cozy.mp3") },
+    { name: "Hip Hop", file: require("@/assets/music/hiphop.mp3") },
+    { name: "Spring", file: require("@/assets/music/spring.mp3") },
+    { name: "Rain", file: require("@/assets/music/rain.mp3") },
+    { name: "LofiGirl1", file: require("@/assets/music/lofigirl1.mp3") },
+    { name: "LofiGirl2", file: require("@/assets/music/lofigirl2.mp3") },
+];
 
 export default function WorkSession({ sessionDuration, avatarName, onSessionEnd, mode }) {
+    // Session state
     const [accumulatedWorking, setAccumulatedWorking] = useState(0);
     const [accumulatedBreak, setAccumulatedBreak] = useState(0);
-
-    // currentElapsed tracks seconds elapsed since the current period began.
     const [currentElapsed, setCurrentElapsed] = useState(0);
-
     const [curMode, setCurMode] = useState(mode);
     const [timerPaused, setTimerPaused] = useState(false);
 
-    // UI state for modals and animations.
+    // UI state for modals & animations
     const [showEndModal, setShowEndModal] = useState(false);
     const [showPauseModal, setShowPauseModal] = useState(false);
     const [showBreakModal, setShowBreakModal] = useState(false);
@@ -27,34 +42,45 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
     const [showMotivation, setShowMotivation] = useState(false);
     const [motivationText, setMotivationText] = useState("");
 
+    // Music state
+    const [showMusicModal, setShowMusicModal] = useState(false);
+    const [musicPlaying, setMusicPlaying] = useState(false);
+    const [currentTrack, setCurrentTrack] = useState(null);
+    const soundRef = useRef(null);
+
     const timerRef = useRef(null);
     const progressAnim = useRef(new Animated.Value(0)).current;
-
     const [lastMotivationIndex, setLastMotivationIndex] = useState(0);
-
-
-    // modeStartRef holds the timestamp when the current period began.
     const modeStartRef = useRef(Date.now());
     const [pauseStartTime, setPauseStartTime] = useState(null);
+
+    // Calculate remaining seconds/minutes
+    const remainingSeconds =
+        curMode === "working"
+            ? sessionDuration - (accumulatedWorking + currentElapsed)
+            : sessionDuration - accumulatedWorking;
+    const remainingMinutes = Math.floor(remainingSeconds / 60);
+
+    // Helper: enable audio mode
     const enableAudio = async () => {
         await Audio.setAudioModeAsync({
             playsInSilentModeIOS: true,
             staysActiveInBackground: false,
             shouldDuckAndroid: false,
-        })
+        });
     };
+
+    // Play work end sound
     const playWorkEndSound = async () => {
         try {
+            await stopMusic();
             await enableAudio();
             for (let i = 0; i < 3; i++) {
                 const _sound = new Audio.Sound();
                 await _sound.loadAsync(require("@/assets/sounds/work_end.m4a"), { shouldPlay: true });
                 await _sound.setPositionAsync(0);
                 await _sound.playAsync();
-
-                // Wait for 1 second before playing the next sound
                 await new Promise((resolve) => setTimeout(resolve, 2000));
-
                 await _sound.unloadAsync();
             }
         } catch (error) {
@@ -62,7 +88,43 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         }
     };
 
-    // Timer effect updates currentElapsed every 1000ms when not paused.
+    // --- Music Functions ---
+    const toggleMusic = async () => {
+        if (musicPlaying) {
+            await stopMusic();
+        } else {
+            setShowMusicModal(true);
+        }
+    };
+
+    const playMusic = async (track) => {
+        try {
+            if (soundRef.current) {
+                await soundRef.current.unloadAsync();
+            }
+            const { sound } = await Audio.Sound.createAsync(track.file, {
+                shouldPlay: true,
+                isLooping: true,
+            });
+            soundRef.current = sound;
+            setCurrentTrack(track);
+            setMusicPlaying(true);
+            setShowMusicModal(false);
+        } catch (error) {
+            console.error("Error playing music:", error);
+        }
+    };
+
+    const stopMusic = async () => {
+        if (soundRef.current) {
+            await soundRef.current.stopAsync();
+            await soundRef.current.unloadAsync();
+        }
+        setMusicPlaying(false);
+        setCurrentTrack(null);
+    };
+
+    // --- Timer Effect ---
     useEffect(() => {
         modeStartRef.current = Date.now();
         setCurrentElapsed(0);
@@ -70,22 +132,21 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
             const elapsed = Math.floor((Date.now() - modeStartRef.current) / 1000);
             setCurrentElapsed(elapsed);
 
-            // End the session if the working time reaches sessionDuration.
             if (curMode === "working" && (accumulatedWorking + elapsed) >= sessionDuration) {
                 clearInterval(timerRef.current);
                 playWorkEndSound();
                 onSessionEnd({ workingSeconds: sessionDuration, breakSeconds: accumulatedBreak });
-            };
+            }
         }, 1000);
         return () => clearInterval(timerRef.current);
     }, [timerPaused, curMode, accumulatedWorking, accumulatedBreak, sessionDuration, onSessionEnd]);
 
-    // Update the progress bar.
+    // --- Progress Bar Effect ---
     useEffect(() => {
         const progress =
             curMode === "working"
                 ? (accumulatedWorking + currentElapsed) / sessionDuration
-                : accumulatedWorking / sessionDuration; // Freeze progress in break mode
+                : accumulatedWorking / sessionDuration;
         Animated.timing(progressAnim, {
             toValue: Math.min(progress, 1),
             duration: 250,
@@ -93,13 +154,11 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         }).start();
     }, [accumulatedWorking, currentElapsed, sessionDuration, curMode]);
 
+    // --- Motivation Effect ---
     useEffect(() => {
         if (curMode === "working") {
-            // Total working seconds is the banked working time plus the current elapsed seconds.
             const totalWorking = accumulatedWorking + currentElapsed;
-            // Calculate the current block (each block is 5 minutes = 300 seconds).
             const currentIndex = Math.floor(totalWorking / 300);
-            // Only trigger if we have advanced into a new block.
             if (currentIndex > lastMotivationIndex) {
                 setLastMotivationIndex(currentIndex);
                 getCompletion(`Persona: ${avatarName}. Provide a brief motivational message for the user.`)
@@ -113,15 +172,16 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         }
     }, [accumulatedWorking, currentElapsed, curMode, lastMotivationIndex, avatarName]);
 
-    // When the user presses pause:
-    //  - If in working mode, bank the working time and switch to break.
-    //  - Record the pause start so that paused time is later added as break seconds.
-    const handlePause = () => {
+    // --- Pause Handler ---
+    const handlePause = async () => {
         clearInterval(timerRef.current);
         timerRef.current = null;
         if (curMode === "working") {
-            setAccumulatedWorking((prev) => prev + currentElapsed);
+            setAccumulatedWorking(prev => prev + currentElapsed);
             setCurMode("break");
+        }
+        if (musicPlaying) {
+            await stopMusic();
         }
         setTimerPaused(true);
         setShowMotivation(false);
@@ -130,8 +190,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         setPauseStartTime(Date.now());
     };
 
-    // Instead of immediately resetting the timer to break mode,
-    // we show the break modal that counts down from 5 minutes.
+    // --- Start Break: Show Break Modal ---
     const startBreak = () => {
         setShowBreakModal(true);
         setShowEndModal(false);
@@ -139,6 +198,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         setShowMotivation(false);
     };
 
+    // --- Resume Handler ---
     const handlePauseModalResume = async () => {
         setShowPauseModal(false);
         setShowEndModal(false);
@@ -148,14 +208,11 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         setTimerPaused(false);
         if (pauseStartTime) {
             const pausedFor = Math.floor((Date.now() - pauseStartTime) / 1000);
-            setAccumulatedBreak((prev) => prev + pausedFor);
+            setAccumulatedBreak(prev => prev + pausedFor);
             setPauseStartTime(null);
         }
-        // Fetch and display an AI message when resuming.
         try {
-            const message = await getCompletion(
-                `Persona: ${avatarName}. Provide a motivational message for resuming work.`
-            );
+            const message = await getCompletion(`Persona: ${avatarName}. Provide a motivational message for resuming work.`);
             setMotivationText(message);
             setShowMotivation(true);
             setTimeout(() => setShowMotivation(false), 12000);
@@ -164,11 +221,12 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         }
     };
 
-
-
-    // Quit early, combining any in-progress elapsed time.
-    const handleQuit = () => {
+    // --- Quit Handler ---
+    const handleQuit = async () => {
         clearInterval(timerRef.current);
+        if (musicPlaying) {
+            await stopMusic();
+        }
         onSessionEnd({
             workingSeconds: accumulatedWorking + (curMode === "working" ? currentElapsed : 0),
             breakSeconds: accumulatedBreak + (curMode === "break" ? currentElapsed : 0),
@@ -189,6 +247,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
         }
     };
 
+    // Format time as HH:MM:SS
     const formatTime = (totalSeconds) => {
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -198,6 +257,14 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
 
     return (
         <>
+<TouchableOpacity
+  style={[
+    styles.controlButton,
+    { position: "absolute", top: 97, left: 40 }
+  ]}
+  onPress={toggleMusic}
+>                        <FontAwesome6 name="music" size={20} color={musicPlaying ? "#1DC0A5" : "black"} />
+                    </TouchableOpacity>
             {showAnimation ? (
                 <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8}>
                     <WorkingAvatar avatarName={avatarName} />
@@ -228,7 +295,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
                             : "Break"}
                     </Text>
                     <Text style={styles.progressSubtitle}>
-                        {`${Math.floor((sessionDuration - accumulatedWorking) / 60)} min remaining`}
+                        {`${remainingMinutes} min remaining`}
                     </Text>
                     <View style={styles.progressBackground}>
                         <Animated.View
@@ -247,15 +314,34 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
 
                 {/* Controls */}
                 <View style={styles.controls}>
+                    {/* Music Button */}
+                    
                     <TouchableOpacity
                         style={styles.controlButton}
-                        onPress={timerPaused ? handlePauseModalResume : () => { handlePause(); setShowPauseModal(true); }}
+                        onPress={
+                            timerPaused
+                                ? handlePauseModalResume
+                                : () => {
+                                    handlePause();
+                                    setShowPauseModal(true);
+                                }
+                        }
                     >
                         <FontAwesome6 name={timerPaused ? "play" : "pause"} size={20} color="black" />
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.motivationButton} onPress={handleAvatarPress}>
+                        <Text style={styles.motivationButtonText}>Motivation</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.controlButton}
-                        onPress={timerPaused ? handlePauseModalResume : () => { handlePause(); setShowEndModal(true); }}
+                        onPress={
+                            timerPaused
+                                ? handlePauseModalResume
+                                : () => {
+                                    handlePause();
+                                    setShowEndModal(true);
+                                }
+                        }
                     >
                         <FontAwesome6 name="xmark" size={20} color="black" />
                     </TouchableOpacity>
@@ -267,7 +353,7 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
                         <View style={styles.modalContainer}>
                             <Text style={styles.modalTitle}>Paused</Text>
                             <Text style={styles.modalSubtitle}>Ok, but don’t take too long! Come back soon!</Text>
-                            <TouchableOpacity style={styles.resumeButton} onPress={handlePauseModalResume}>
+                            <TouchableOpacity style={styles.modalButton} onPress={handlePauseModalResume}>
                                 <Text style={styles.resumeButtonText}>Resume</Text>
                             </TouchableOpacity>
                         </View>
@@ -280,11 +366,8 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
                         <View style={styles.modalContainer}>
                             <Text style={styles.modalTitle}>End session?</Text>
                             <Text style={styles.modalSubtitle}>
-                                Would you like to take a 5 minute break, continue working, or end the session?
+                                Would you like continue working end the session?
                             </Text>
-                            <TouchableOpacity style={styles.modalButton} onPress={startBreak}>
-                                <Text style={styles.modalButtonText}>5 Minute Break</Text>
-                            </TouchableOpacity>
                             <TouchableOpacity style={styles.modalButton} onPress={handlePauseModalResume}>
                                 <Text style={styles.modalButtonText}>Continue Working</Text>
                             </TouchableOpacity>
@@ -299,18 +382,93 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
                 {showBreakModal && (
                     <BreakCountdownModal
                         visible={showBreakModal}
-                        onCountdownFinish={handlePauseModalResume}  // Resume only when user clicks the button.
+                        onCountdownFinish={handlePauseModalResume}
                         onTick={(sec) => {
                             setAccumulatedBreak(prev => prev + sec);
                         }}
                     />
                 )}
 
+                {/* Music Selection Modal */}
+                <Modal visible={showMusicModal} transparent animationType="slide">
+                    <View style={musicStyles.modalOverlay}>
+                        <View style={musicStyles.modalContainer}>
+                            <Text style={musicStyles.modalTitle}>Select Lofi Music</Text>
+                            <FlatList
+                                data={musicTracks}
+                                keyExtractor={(item) => item.name}
+                                numColumns={2}
+                                contentContainerStyle={musicStyles.modalButtonContainer}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={musicStyles.modalButton}
+                                        onPress={() => playMusic(item)}
+                                    >
+                                        {/* Single-line text with smaller font */}
+                                        <Text style={musicStyles.modalButtonText} numberOfLines={1} ellipsizeMode="tail">
+                                            {item.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                            <TouchableOpacity style={[musicStyles.modalButton, { width: "90%", backgroundColor: "#94B2A7" }]} onPress={() => setShowMusicModal(false)}>
+                                <Text style={musicStyles.modalButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
             </View>
         </>
     );
 }
 
+/** Music-specific styles, for a 2-column layout with consistent button sizes. */
+const musicStyles = StyleSheet.create({
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.4)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalContainer: {
+        width: "90%",
+        maxHeight: "80%",
+        backgroundColor: "white",
+        borderRadius: 15,
+        padding: 30,
+        alignItems: "center",
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: "bold",
+        marginBottom: 20,
+    },
+    modalButtonContainer: {
+        justifyContent: "space-evenly",
+        alignItems: "center",
+        paddingVertical: 10,
+    },
+    modalButton: {
+        backgroundColor: "#D9D9D9",
+        paddingVertical: 15,
+        paddingHorizontal: 10,
+        borderRadius: 50,
+        marginVertical: 10,
+        marginHorizontal: 10,
+        width: "40%", // Enough width for 2 columns with spacing
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    modalButtonText: {
+        fontSize: 14, // Smaller font to fit longer names on one line
+        fontWeight: "bold",
+        color: "black",
+        textAlign: "center",
+    },
+});
+
+/** General session styles. */
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -333,7 +491,7 @@ const styles = StyleSheet.create({
     },
     progressContainer: {
         position: "absolute",
-        bottom: 100,
+        bottom: 130,
         width: "85%",
         backgroundColor: "#94B2A7",
         padding: 15,
@@ -362,19 +520,36 @@ const styles = StyleSheet.create({
     },
     controls: {
         position: "absolute",
-        bottom: 30,
+        bottom: 60,
         flexDirection: "row",
-        justifyContent: "space-around",
-        width: "30%",
+        alignItems: "center",
+        width: "100%",
+        paddingHorizontal: 20,
+        justifyContent: "space-evenly", // center horizontally with even spacing
     },
     controlButton: {
         width: 50,
         height: 50,
         borderRadius: 25,
-        borderWidth: 2,
-        borderColor: "black",
+        backgroundColor: "#D9D9D9",
         justifyContent: "center",
         alignItems: "center",
+    },
+    motivationButton: {
+        width: 170,
+        height: 50,
+        backgroundColor: "#D9D9D9",
+        borderRadius: 50,
+        fontSize: 18,
+        color: "black",
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    motivationButtonText: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: "black",
+
     },
     motivationBubble: {
         position: "absolute",
@@ -423,7 +598,7 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         marginVertical: 5,
         width: "80%",
-        alignItems: "center"
+        alignItems: "center",
     },
     modalButtonText: {
         fontSize: 16,
@@ -431,36 +606,9 @@ const styles = StyleSheet.create({
         color: "black",
     },
     avatarImg: {
-        height: 800,             // Fixed height
-        width: 400,              // Fixed width
-        position: "absolute",  
-        bottom: -250 
-      },
-    breakModalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.4)",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    breakModalContainer: {
-        width: "75%",
-        backgroundColor: "white",
-        borderRadius: 15,
-        padding: 20,
-        alignItems: "center",
-    },
-    breakModalTitle: {
-        fontSize: 24,
-        fontWeight: "bold",
-        marginBottom: 10,
-    },
-    breakModalCountdown: {
-        fontSize: 48,
-        fontWeight: "bold",
-        marginVertical: 10,
-    },
-    breakModalSubtitle: {
-        fontSize: 16,
-        color: "#555",
+        height: 800,
+        width: 400,
+        position: "absolute",
+        bottom: -250,
     },
 });
