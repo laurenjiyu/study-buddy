@@ -2,14 +2,21 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View, LogBox } from "react-native";
 import { useFonts } from "expo-font";
 import * as Notifications from "expo-notifications";
-import { Redirect } from "expo-router";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
 
 import ChooseAvatar from "@/app/ChooseAvatar";
 import ChooseLocation from "@/app/ChooseLocation";
+import WorkSession from "@/app/WorkSession";
 import SetupSession from "@/app/SetupSession";
+import StartPage from "@/app/Onboarding/StartPage";
+import FeedbackQ from "@/app/Onboarding/FeedbackQ";
+import TimeQ from "@/app/Onboarding/TimeQ";
+import ChooseSesh from "@/app/Onboarding/ChooseSesh";
+import AboutAvatar from "@/app/AboutAvatar";
+import Loading from "@/app/Loading";
 
 import db from "@/database/db";
-import Loading from "@/app/Loading";
 
 // Hides all console warnings
 LogBox.ignoreAllLogs(true);
@@ -19,9 +26,11 @@ Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: false,
-    shouldSetBadge: false, // optional: do not set app icon badge
+    shouldSetBadge: false,
   }),
 });
+
+const Stack = createStackNavigator();
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -39,7 +48,7 @@ export default function App() {
         await Notifications.requestPermissionsAsync();
       }
     }
-    requestPermissions(); // Call the async function inside useEffect
+    requestPermissions();
   }, []);
 
   useEffect(() => {
@@ -76,13 +85,21 @@ export default function App() {
     });
   };
 
-  if (session) {
-    return <Redirect href="/TODO/fill/in/route" />;
-  } else if (isLoading) {
-    return <Loading />;
-  } else {
-    return <ChooseAvatar />;
-  }
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="StartPage" component={StartPage} />
+        <Stack.Screen name="ChooseAvatar" component={ChooseAvatar} />
+        <Stack.Screen name="FeedbackQ" component={FeedbackQ} />
+        <Stack.Screen name="TimeQ" component={TimeQ} />
+        <Stack.Screen name="AboutAvatar" component={AboutAvatar} />
+        <Stack.Screen name="ChooseLocation" component={ChooseLocation} />
+        <Stack.Screen name="SetupSession" component={SetupSession} />
+        <Stack.Screen name="WorkSession" component={WorkSession} />
+        <Stack.Screen name="ChooseSesh" component={ChooseSesh} />        
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
 }
 
 // Apply default font style safely using StyleSheet

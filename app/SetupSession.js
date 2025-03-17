@@ -8,7 +8,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AITextBubble from "@/components/AITextBubble";
 import AvatarAnimation from "@/components/AvatarAnimation";
@@ -41,8 +41,30 @@ export default function SetupSession() {
   const [isBreakModalVisible, setIsBreakModalVisible] = useState(false);
 
   const navigation = useNavigation();
+  const route = useRoute();
 
   const getBgImage = (name) => bgImages[name] || bgImages.bedroom;
+
+  // If the session is started through quickstart, load the session duration to be the user's preferred length 
+  useEffect(() => {
+    const loadSessionDuration = async () => {
+      try {
+        const storedDuration = await AsyncStorage.getItem("ideal_work_time");
+        if (storedDuration) {
+          const durationInSeconds = parseInt(storedDuration, 10) * 60; // Convert minutes to seconds
+          setSessionDuration(durationInSeconds);
+        }
+      } catch (err) {
+        console.error("Error loading session duration:", err.message);
+      }
+    };
+
+    loadSessionDuration(); // Call async function
+
+    if (route.params?.sessionStage) {
+      setSessionStage(route.params.sessionStage);
+    }
+  }, [route.params?.sessionStage]);
 
   // Map index to post-session screen
   const sessionMapping = {

@@ -17,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import Theme from "@/assets/theme";
 
-export default function Login() {
+export default function ChooseAvatar() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,6 @@ export default function Login() {
   const navigation = useNavigation();
   
   const updateAvatar = (chosen) => setAvatar(chosen);
-
 
   const confirmAvatar = async () => {
     try {
@@ -52,6 +51,18 @@ export default function Login() {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.navigate("ChooseSesh")}
+      >
+        <FontAwesome6
+          name="arrow-left"
+          size={24}
+          color={Theme.colors.textPrimary}
+        />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+
       <View style={styles.circle}/>
       <View style={styles.splash}>
           <Text style={styles.splashText}>Welcome! Choose your productivity friend.</Text>
@@ -73,6 +84,19 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.backgroundPrimary,
     flex: 1,
   },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      position: "absolute",
+      top: 70,
+      left: 20,
+      zIndex: 10,
+    },
+    backButtonText: {
+      marginLeft: 10,
+      fontSize: 18,
+      color: Theme.colors.textPrimary,
+    },
   circle: {
     position: "absolute",
     bottom: -50,

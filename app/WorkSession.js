@@ -7,6 +7,7 @@ import { getCompletion } from "./OpenAI";
 import { workingImages } from "@/assets/imgPaths";
 import { Audio } from "expo-av";
 import BreakCountdownModal from "@/components/BreakCountdownModal";
+import theme from "@/assets/theme";
 
 
 export default function WorkSession({ sessionDuration, avatarName, onSessionEnd, mode }) {
@@ -280,16 +281,13 @@ export default function WorkSession({ sessionDuration, avatarName, onSessionEnd,
                         <View style={styles.modalContainer}>
                             <Text style={styles.modalTitle}>End session?</Text>
                             <Text style={styles.modalSubtitle}>
-                                Would you like to take a 5 minute break, continue working, or end the session?
+                                Would you like to continue working, or end the session?
                             </Text>
-                            <TouchableOpacity style={styles.modalButton} onPress={startBreak}>
-                                <Text style={styles.modalButtonText}>5 Minute Break</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.modalButton} onPress={handlePauseModalResume}>
-                                <Text style={styles.modalButtonText}>Continue Working</Text>
-                            </TouchableOpacity>
                             <TouchableOpacity style={styles.modalButton} onPress={handleQuit}>
                                 <Text style={styles.modalButtonText}>End Session</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.modalButton, styles.activeButton]} onPress={handlePauseModalResume}>
+                                <Text style={styles.modalButtonText}>Continue Working</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -417,13 +415,16 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
     modalButton: {
-        backgroundColor: "#D9D9D9",
+        backgroundColor: theme.colors.lightGray,
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 50,
         marginVertical: 5,
         width: "80%",
         alignItems: "center"
+    },
+    activeButton: {
+        backgroundColor: theme.colors.darkGray,
     },
     modalButtonText: {
         fontSize: 16,
