@@ -75,6 +75,7 @@ export default function ChatSection({
                   ref={inputRef}
                   style={styles.input}
                   placeholder={placeholder}
+                  placeholderTextColor="#d9d9d9"
                   autoFocus
                   keyboardType={keyboardType}
                   value={inputText}

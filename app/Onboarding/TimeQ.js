@@ -36,7 +36,7 @@ export default function TimeQ() {
       console.log("Stored ideal work session time:", idealWorkLen);
       await AsyncStorage.setItem("ideal_time_of_day", timeOfDay);
       console.log("Stored ideal time of day:", timeOfDay);
-      navigation.navigate("ChooseSesh"); 
+      navigation.navigate("ChooseSesh");
     } catch (err) {
       console.error("Unexpected error updating ideal work time:", err.message);
     }
@@ -70,8 +70,12 @@ export default function TimeQ() {
           value={idealWorkLen}
           placeholder="Enter minutes (e.g., 25)"
           keyboardType="numeric"
+          returnKeyType="done"  // Makes the "Enter" key say "Done"
+          onSubmitEditing={() => Keyboard.dismiss()} // Hides the keyboard when Enter is pressed
+          blurOnSubmit={true} // Ensures the keyboard is dismissed after submit
           onChangeText={(text) => setLen(text)}
         />
+
 
         <Text style={styles.question}>
           What time of the day do you like working?
